@@ -1,0 +1,12 @@
+{
+  "extends": ["@commitlint/config-conventional"],
+  "rules": {
+    "scope-enum": [2, "always", [
+      "rust", "frontend", "zeusX", "ci", "docs", "config", "release"
+    ]],
+    "type-enum": [2, "always", [
+      "feat", "fix", "chore", "docs", "test", "refactor", "ci", "perf", "build"
+    ]],
+    "header-max-length": [2, "always", 100]
+  }
+}

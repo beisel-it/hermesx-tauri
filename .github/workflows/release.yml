@@ -1,0 +1,105 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  # ── Validate tag & CHANGELOG ───────────────────────────────────────────────
+  validate:
+    name: Validate release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.semver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract semver
+        id: semver
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Tag: $TAG — Version: $VERSION"
+      - name: Validate CHANGELOG entry
+        run: |
+          grep -q "## \[${{ steps.semver.outputs.version }}\]" CHANGELOG.md \
+            || (echo "❌ No CHANGELOG entry for ${{ steps.semver.outputs.version }}" && exit 1)
+
+  # ── Build Tauri (multi-OS, multi-arch) ────────────────────────────────────
+  build-tauri:
+    name: Build ${{ matrix.platform }}
+    needs: validate
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Windows x64
+          - platform: windows-x64
+            runner: windows-latest
+            args: ''
+            artifact_pattern: '*.exe,*.msi'
+          # macOS Apple Silicon (arm64)
+          - platform: macos-arm64
+            runner: macos-latest
+            args: '--target aarch64-apple-darwin'
+            artifact_pattern: '*.dmg'
+          # macOS Intel (x64)
+          - platform: macos-x64
+            runner: macos-latest
+            args: '--target x86_64-apple-darwin'
+            artifact_pattern: '*.dmg'
+          # Linux x64
+          - platform: linux-x64
+            runner: ubuntu-22.04
+            args: ''
+            artifact_pattern: '*.deb,*.AppImage'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-arm64' && 'aarch64-apple-darwin' || matrix.platform == 'macos-x64' && 'x86_64-apple-darwin' || '' }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      # Linux system deps for Tauri
+      - name: Install Linux dependencies
+        if: matrix.runner == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - run: yarn install --frozen-lockfile
+      - run: yarn build
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          args: ${{ matrix.args }}
+          tagName: ${{ github.ref_name }}
+          releaseName: 'HermesX ${{ github.ref_name }}'
+          releaseBody: |
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)
+            for details.
+          releaseDraft: true
+          prerelease: false

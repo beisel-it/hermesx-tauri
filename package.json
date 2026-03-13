@@ -7,7 +7,13 @@
     "build": "vite build",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "lint": "eslint src --ext .ts,.svelte",
+    "lint:fix": "eslint src --ext .ts,.svelte --fix",
+    "format": "prettier --write src",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "test:unit": "vitest run",
+    "commitlint": "commitlint"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
@@ -21,6 +27,18 @@
     "svelte": "^5",
     "@sveltejs/vite-plugin-svelte": "^4",
     "vite": "^6",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@commitlint/cli": "^19",
+    "@commitlint/config-conventional": "^19",
+    "eslint": "^9",
+    "@eslint/js": "^9",
+    "typescript-eslint": "^8",
+    "eslint-plugin-svelte": "^2",
+    "globals": "^15",
+    "prettier": "^3",
+    "prettier-plugin-svelte": "^3",
+    "svelte-check": "^4",
+    "vitest": "^2",
+    "husky": "^9"
   }
 }
