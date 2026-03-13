@@ -1,3 +1,10 @@
+## [1.7.3](https://github.com/beisel-it/hermesx-tauri/compare/v1.7.2...v1.7.3) (2026-03-13)
+
+
+### Bug Fixes
+
+* **rust:** import tauri::Listener trait for app.handle().listen() ([c46c965](https://github.com/beisel-it/hermesx-tauri/commit/c46c965570e4f8457fc201c5ed346c46be15ac0c))
+
 ## [1.7.2](https://github.com/beisel-it/hermesx-tauri/compare/v1.7.1...v1.7.2) (2026-03-13)
 
 
