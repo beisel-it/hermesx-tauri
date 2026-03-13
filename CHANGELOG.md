@@ -1,3 +1,10 @@
+## [1.9.10](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.9...v1.9.10) (2026-03-13)
+
+
+### Bug Fixes
+
+* **capabilities:** core:window:allow-hide + positioner:allow-move-window (correct permission keys) ([2f60a52](https://github.com/beisel-it/hermesx-tauri/commit/2f60a52047a1b9c48a31830b05a4db75efd5ffb9))
+
 ## [1.9.9](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.8...v1.9.9) (2026-03-13)
 
 
