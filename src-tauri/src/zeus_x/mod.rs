@@ -61,17 +61,22 @@ pub struct SidecarResponse {
 /// In dev: look for node + dist/index.js relative to cargo workspace.
 /// In production: Tauri bundles the sidecar via tauri.conf.json externalBin.
 fn sidecar_cmd() -> Command {
-    // Production path (Tauri sidecar): tauri resolves this automatically.
-    // Dev path: node + script alongside binary.
-    let script = std::env::current_exe()
-        .ok()
-        .and_then(|p| p.parent().map(|d| d.join("zeus-sidecar.js")))
-        .unwrap_or_else(|| {
-            // Fallback: relative to workspace root during dev
-            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .parent().unwrap()
-                .join("src-sidecar/dist/index.js")
-        });
+    // Dev: CARGO_MANIFEST_DIR = src-tauri/, parent = workspace root
+    // Production: zeus-sidecar.js bundled alongside binary
+    let dev_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("workspace root")
+        .join("src-sidecar/dist/index.js");
+
+    let script = if dev_path.exists() {
+        dev_path
+    } else {
+        // Production: next to the binary
+        std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().map(|d| d.join("zeus-sidecar.js")))
+            .unwrap_or(dev_path)
+    };
 
     let mut cmd = Command::new("node");
     cmd.arg(script);

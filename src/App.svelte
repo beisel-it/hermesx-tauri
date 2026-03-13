@@ -12,12 +12,13 @@
   let workedTime = $state('00:00:00');
   let interval: ReturnType<typeof setInterval>;
 
-  // Manual booking keys
+  // Manual booking keys — keys match sidecar BUTTONS in src-sidecar/src/index.ts
   const MANUAL_ACTIONS = [
-    { key: 'start_work',  label: '▶ MA Start' },
-    { key: 'end_work',    label: '⏹ MA Ende' },
-    { key: 'start_break', label: '☕ Pause' },
-    { key: 'end_break',   label: '↩ Zurück' },
+    { key: 'mobiles-arbeiten-start', label: '▶ MA Start' },
+    { key: 'mobiles-arbeiten-end',   label: '⏹ MA Ende' },
+    { key: 'pause-mobil',            label: '☕ Pause' },
+    { key: 'in',                     label: '🟢 IN' },
+    { key: 'out',                    label: '🔴 OUT' },
   ];
 
   async function refresh() {
