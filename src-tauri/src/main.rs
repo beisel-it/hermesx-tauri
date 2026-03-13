@@ -197,6 +197,14 @@ fn main() {
                     }
                 })
                 .build(app)?;
+            // Hide window on close instead of quitting
+            let main_win = app.get_webview_window("main").expect("main window");
+            main_win.on_window_event(|event| {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                }
+            });
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
