@@ -1,3 +1,10 @@
+## [1.9.1](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.0...v1.9.1) (2026-03-13)
+
+
+### Bug Fixes
+
+* **ci:** linux futures_util->futures+StreamExt, windows polling via WTSQuerySessionInformation (no WNDPROC), remove invalid on_window_event ([9b52ffe](https://github.com/beisel-it/hermesx-tauri/commit/9b52ffe5c678ae5a77af2f07d1eefb05cdf3abf4))
+
 # [1.9.0](https://github.com/beisel-it/hermesx-tauri/compare/v1.8.1...v1.9.0) (2026-03-13)
 
 
