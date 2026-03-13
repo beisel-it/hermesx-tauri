@@ -1,3 +1,10 @@
+## [1.9.19](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.18...v1.9.19) (2026-03-13)
+
+
+### Bug Fixes
+
+* **sidecar:** use correct ZeusX URL and login flow from zeus-punch (zeusx.intersport.de, JS clicks, workspace.aspx wait) ([72f16cf](https://github.com/beisel-it/hermesx-tauri/commit/72f16cfad77f05b3c08afbbbffe3a869498053f5))
+
 ## [1.9.18](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.17...v1.9.18) (2026-03-13)
 
 
