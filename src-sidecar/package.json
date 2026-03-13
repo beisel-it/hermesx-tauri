@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "esbuild src/index.ts --bundle --platform=node --outfile=dist/index.js --external:playwright",
-    "dev": "ts-node src/index.ts"
+    "dev": "ts-node src/index.ts",
+    "postinstall": "npx playwright install chromium --with-deps 2>/dev/null || npx playwright install chromium"
   },
   "dependencies": {
     "playwright": "^1.44.0"
