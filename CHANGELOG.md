@@ -1,3 +1,10 @@
+## [1.9.4](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.3...v1.9.4) (2026-03-13)
+
+
+### Bug Fixes
+
+* **windows:** PWSTR in windows::core not Win32::Foundation, add Win32_Core feature ([18a8348](https://github.com/beisel-it/hermesx-tauri/commit/18a83483bad3b7bd62e6e7b0c5dac7d809222e7c))
+
 ## [1.9.3](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.2...v1.9.3) (2026-03-13)
 
 
