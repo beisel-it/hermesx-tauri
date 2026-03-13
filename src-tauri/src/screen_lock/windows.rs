@@ -1,5 +1,4 @@
 //! Windows screen lock detection via WTSQuerySessionInformation polling (5s).
-//! Uses WTSSessionInfoEx to read SessionFlags: 0=locked, 1=unlocked.
 
 use tauri::{AppHandle, Emitter};
 
@@ -22,37 +21,35 @@ fn is_session_locked() -> bool {
 }
 
 unsafe fn is_session_locked_impl() -> Option<bool> {
+    use windows::Win32::Foundation::PWSTR;
     use windows::Win32::System::RemoteDesktop::{
-        WTSQuerySessionInformationW, WTSFreeMemory, WTSSessionInfoEx,
+        WTSFreeMemory, WTSQuerySessionInformationW, WTSSessionInfoEx,
         WTS_CURRENT_SERVER_HANDLE, WTS_CURRENT_SESSION,
     };
 
-    let mut buffer: *mut u16 = std::ptr::null_mut();
+    // WTSQuerySessionInformationW expects *mut PWSTR (pointer-to-PWSTR)
+    let mut buffer = PWSTR::null();
     let mut bytes_returned: u32 = 0;
 
     WTSQuerySessionInformationW(
         WTS_CURRENT_SERVER_HANDLE,
         WTS_CURRENT_SESSION,
         WTSSessionInfoEx,
-        &mut buffer,
+        &mut buffer,       // *mut PWSTR
         &mut bytes_returned,
-    ).ok()?; // Returns Result<()> in windows-rs
+    ).ok()?;
 
     if buffer.is_null() {
         return None;
     }
 
-    // WTSINFOEXW layout:
-    // - Level: DWORD (u32) at offset 0
-    // - Data: WTSINFOEX_LEVEL_W union at offset 4
-    //   - WTSINFOEX_LEVEL1_W.SessionFlags: LONG (i32) at offset 0 within union
-    // So SessionFlags is at byte offset 4 from the start of WTSINFOEXW
-    let ptr = buffer as *const u8;
+    // WTSINFOEXW: Level (u32 at offset 0), then WTSINFOEX_LEVEL1_W
+    // SessionFlags is first field of WTSINFOEX_LEVEL1_W (i32 at offset 4)
+    let ptr = buffer.as_ptr() as *const u8;
     let session_flags = *(ptr.add(4) as *const i32);
 
-    WTSFreeMemory(buffer as *mut _);
+    WTSFreeMemory(buffer.as_ptr() as *mut _);
 
-    // WTS_SESSIONSTATE_LOCK = 0x00000000
-    // WTS_SESSIONSTATE_UNLOCK = 0x00000001
+    // WTS_SESSIONSTATE_LOCK = 0, WTS_SESSIONSTATE_UNLOCK = 1
     Some(session_flags == 0)
 }
