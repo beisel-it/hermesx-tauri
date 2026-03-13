@@ -6,6 +6,7 @@
 
 pub mod selectors;
 
+use crate::credentials;
 use serde::{Deserialize, Serialize};
 use std::io::{BufRead, BufReader, Write};
 use std::process::{Command, Stdio};
@@ -115,6 +116,8 @@ pub async fn dispatch(action: ZeusAction, dry_run: bool) -> Result<SidecarRespon
 
 /// Load credentials from OS keychain (stub — US-019).
 fn load_credentials() -> Option<SidecarCredentials> {
-    // TODO: tauri-plugin-keyring integration
-    None
+    credentials::load_credentials().map(|c| SidecarCredentials {
+        username: c.username,
+        password: c.password,
+    })
 }

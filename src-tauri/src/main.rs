@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod credentials;
 mod persistence;
 mod monitor;
 mod zeusX;
@@ -126,6 +127,24 @@ fn set_dry_run(enabled: bool, state: State<AppState>) -> serde_json::Value {
     serde_json::json!({ "dry_run": cfg.dry_run })
 }
 
+#[tauri::command]
+fn save_credentials(username: String, password: String) -> Result<(), String> {
+    credentials::save_credentials(&username, &password)
+}
+
+#[tauri::command]
+fn load_credentials_status() -> serde_json::Value {
+    match credentials::load_credentials() {
+        Some(c) => serde_json::json!({ "stored": true, "username": c.username }),
+        None    => serde_json::json!({ "stored": false }),
+    }
+}
+
+#[tauri::command]
+fn delete_credentials() -> Result<(), String> {
+    credentials::delete_credentials()
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
@@ -170,6 +189,7 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             get_status, perform_action, get_config, set_config, set_dry_run,
+            save_credentials, load_credentials_status, delete_credentials,
         ])
         .run(tauri::generate_context!())
         .expect("error while running HermesX");

@@ -1,109 +1,140 @@
 <script lang="ts">
-  import { getConfig, setConfig, setDryRun, type UserConfig } from './lib/tauri';
+  import { invoke } from "@tauri-apps/api/core";
 
-  let { onClose } = $props<{ onClose: () => void }>();
-  let config = $state<UserConfig | null>(null);
-  let saving = $state(false);
-  let saved = $state(false);
+  let { config = $bindable(), onSave } = $props<{
+    config: any;
+    onSave: (c: any) => void;
+  }>();
 
-  const DAYS = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+  // Credentials
+  let credStatus = $state<{ stored: boolean; username?: string } | null>(null);
+  let credUsername = $state("");
+  let credPassword = $state("");
+  let credMessage  = $state("");
 
-  async function load() {
-    config = await getConfig();
+  $effect(() => {
+    invoke<{ stored: boolean; username?: string }>("load_credentials_status")
+      .then(s => { credStatus = s; });
+  });
+
+  async function saveCreds() {
+    await invoke("save_credentials", { username: credUsername, password: credPassword });
+    credStatus = await invoke("load_credentials_status");
+    credMessage = "✅ Gespeichert";
+    credUsername = "";
+    credPassword = "";
+    setTimeout(() => (credMessage = ""), 3000);
   }
 
-  async function save() {
-    if (!config) return;
-    saving = true;
-    try {
-      await setConfig(config);
-      saved = true;
-      setTimeout(() => { saved = false; }, 2000);
-    } finally {
-      saving = false;
-    }
+  async function deleteCreds() {
+    await invoke("delete_credentials");
+    credStatus = { stored: false };
+    credMessage = "🗑 Gelöscht";
+    setTimeout(() => (credMessage = ""), 3000);
   }
-
-  load();
 </script>
 
-{#if config}
 <div class="settings">
-  <div class="settings-header">
-    <h2>Settings</h2>
-    <button onclick={onClose}>✕</button>
-  </div>
+  <h2>⚙️ Einstellungen</h2>
 
+  <!-- Schedule -->
   <section>
-    <h3>Schedule</h3>
+    <h3>📅 Arbeitszeit</h3>
     <label>
-      Start
-      <div class="time-input">
-        <input type="number" min="0" max="23" bind:value={config.schedule.start_time.hour} />
-        :
-        <input type="number" min="0" max="59" bind:value={config.schedule.start_time.minute} />
-      </div>
+      Arbeitsbeginn
+      <input type="time"
+        value={`${String(config?.schedule?.start_time?.hour ?? 8).padStart(2,'0')}:${String(config?.schedule?.start_time?.minute ?? 30).padStart(2,'0')}`}
+        onchange={(e) => {
+          const [h, m] = e.currentTarget.value.split(":").map(Number);
+          config = { ...config, schedule: { ...config.schedule, start_time: { hour: h, minute: m } } };
+        }} />
     </label>
     <label>
-      Work duration (h)
-      <input type="number" min="1" max="16" step="0.5" bind:value={config.schedule.work_duration} />
+      Arbeitszeit (Stunden)
+      <input type="number" min="1" max="12" step="0.5"
+        value={config?.schedule?.work_duration ?? 8}
+        onchange={(e) => {
+          config = { ...config, schedule: { ...config.schedule, work_duration: parseFloat(e.currentTarget.value) } };
+        }} />
     </label>
     <label>
-      Break duration (min)
-      <input type="number" min="0" max="120" bind:value={config.schedule.break_duration} />
-    </label>
-    <label>Workdays
-      <div class="days">
-        {#each DAYS as day, i}
-          <label class="day-toggle">
-            <input type="checkbox" bind:checked={config.schedule.workdays[i]} />
-            {day}
-          </label>
-        {/each}
-      </div>
+      Pausendauer (Minuten)
+      <input type="number" min="15" max="120"
+        value={config?.schedule?.break_duration ?? 30}
+        onchange={(e) => {
+          config = { ...config, schedule: { ...config.schedule, break_duration: parseInt(e.currentTarget.value) } };
+        }} />
     </label>
   </section>
 
+  <!-- Notifications -->
   <section>
-    <h3>Notifications</h3>
-    <label class="toggle"><input type="checkbox" bind:checked={config.notifications.quiet_mode} /> Quiet Mode</label>
-    <label class="toggle"><input type="checkbox" bind:checked={config.notifications.suppress_during_calls} /> Suppress during calls</label>
-  </section>
-
-  <section>
-    <h3>Developer</h3>
-    <label class="toggle dry-run-toggle">
-      <input type="checkbox" bind:checked={config.dry_run}
-        onchange={() => setDryRun(config!.dry_run)} />
-      Dry Run Mode <span class="hint">(no ZeusX calls)</span>
+    <h3>🔔 Benachrichtigungen</h3>
+    <label>
+      <input type="checkbox"
+        checked={config?.notifications?.quiet_mode ?? false}
+        onchange={(e) => {
+          config = { ...config, notifications: { ...config.notifications, quiet_mode: e.currentTarget.checked } };
+        }} />
+      Ruhemodus (keine Benachrichtigungen)
     </label>
   </section>
 
-  <div class="footer">
-    <button class="save-btn" onclick={save} disabled={saving}>
-      {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save'}
-    </button>
-  </div>
+  <!-- ZeusX Credentials -->
+  <section>
+    <h3>🔐 ZeusX Zugangsdaten</h3>
+    {#if credStatus?.stored}
+      <p class="stored">✅ Gespeichert als <strong>{credStatus.username}</strong></p>
+      <button class="danger" onclick={deleteCreds}>🗑 Löschen</button>
+    {:else}
+      <p class="hint">Noch keine Zugangsdaten gespeichert. Werden sicher im OS-Schlüsselbund abgelegt.</p>
+      <label>
+        Benutzername
+        <input type="text" bind:value={credUsername} placeholder="INTERSPORT Kürzel" />
+      </label>
+      <label>
+        Passwort
+        <input type="password" bind:value={credPassword} />
+      </label>
+      <button onclick={saveCreds} disabled={!credUsername || !credPassword}>
+        🔒 Speichern
+      </button>
+    {/if}
+    {#if credMessage}<p class="msg">{credMessage}</p>{/if}
+  </section>
+
+  <!-- Debug -->
+  <section>
+    <h3>🧪 Debug</h3>
+    <label>
+      <input type="checkbox"
+        checked={config?.dry_run ?? false}
+        onchange={(e) => {
+          config = { ...config, dry_run: e.currentTarget.checked };
+        }} />
+      Dry Run (kein ZeusX-Zugriff)
+    </label>
+  </section>
+
+  <button class="primary" onclick={() => onSave(config)}>Speichern</button>
 </div>
-{/if}
 
 <style>
-  .settings { font-family: system-ui, sans-serif; padding: 16px; background: #1a1a2e; color: #e0e0e0; min-width: 220px; }
-  .settings-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-  h2 { margin: 0; font-size: 1rem; }
-  h3 { font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin: 12px 0 6px; }
-  button { background: none; border: none; cursor: pointer; color: #888; font-size: 1rem; }
-  section { border-top: 1px solid #2d2d4e; padding-top: 8px; }
-  label { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; margin-bottom: 8px; }
-  input[type=number] { width: 52px; background: #2d2d4e; border: 1px solid #3d3d5e; color: #e0e0e0; padding: 4px 6px; border-radius: 4px; }
-  .time-input { display: flex; align-items: center; gap: 4px; }
-  .days { display: flex; gap: 4px; }
-  .day-toggle { flex-direction: column; font-size: 0.75rem; gap: 2px; justify-content: center; }
-  .toggle { gap: 8px; justify-content: flex-start; }
-  .dry-run-toggle { color: #f59e0b; }
-  .hint { color: #666; font-size: 0.75rem; }
-  .footer { margin-top: 16px; }
-  .save-btn { width: 100%; padding: 10px; background: #4f46e5; color: #fff; border-radius: 8px; font-size: 0.9rem; transition: background 0.15s; }
-  .save-btn:hover:not(:disabled) { background: #6366f1; }
-  .save-btn:disabled { opacity: 0.6; cursor: default; }
+  .settings { padding: 1rem; font-family: system-ui; }
+  h2 { margin: 0 0 1rem; font-size: 1.1rem; }
+  h3 { font-size: 0.85rem; color: #6b7280; margin: 1rem 0 0.5rem; }
+  section { margin-bottom: 1rem; }
+  label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; margin-bottom: 0.5rem; }
+  input[type="text"], input[type="password"], input[type="number"], input[type="time"] {
+    padding: 0.35rem 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.85rem;
+  }
+  input[type="checkbox"] { width: 1rem; height: 1rem; margin-right: 0.5rem; }
+  label:has(input[type="checkbox"]) { flex-direction: row; align-items: center; }
+  button { padding: 0.4rem 0.9rem; border-radius: 0.375rem; border: none; cursor: pointer; font-size: 0.85rem; }
+  button.primary { background: #4f46e5; color: white; margin-top: 0.5rem; }
+  button.danger  { background: #ef4444; color: white; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .stored { color: #16a34a; font-size: 0.85rem; }
+  .hint   { color: #6b7280; font-size: 0.8rem; }
+  .msg    { font-size: 0.85rem; margin-top: 0.25rem; }
 </style>
