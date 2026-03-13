@@ -44,10 +44,10 @@ pub fn delete_credentials() -> Result<(), String> {
     if let Ok(entry) = Entry::new(SERVICE, USERNAME_KEY) {
         if let Ok(username) = entry.get_password() {
             if let Ok(pass_entry) = Entry::new(SERVICE, &username) {
-                let _ = pass_entry.delete_credential();
+                let _ = pass_entry.delete_password();
             }
         }
-        let _ = entry.delete_credential();
+        let _ = entry.delete_password();
     }
     Ok(())
 }

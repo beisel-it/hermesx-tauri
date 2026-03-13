@@ -8,7 +8,7 @@ pub mod selectors;
 
 use crate::credentials;
 use serde::{Deserialize, Serialize};
-use std::io::{BufRead, BufReader, Write};
+use std::io::{BufRead, Write};
 use std::process::{Command, Stdio};
 use uuid::Uuid;
 
@@ -44,7 +44,7 @@ struct SidecarCredentials {
     password: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct SidecarResponse {
     pub id:     String,
     pub ok:     bool,
