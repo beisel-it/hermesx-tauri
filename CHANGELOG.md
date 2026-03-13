@@ -1,3 +1,10 @@
+## [1.9.17](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.16...v1.9.17) (2026-03-13)
+
+
+### Bug Fixes
+
+* **sidecar:** pending counter prevents process.exit(0) race before async line handler writes response ([c7a8866](https://github.com/beisel-it/hermesx-tauri/commit/c7a8866c60d9b117f21439a79e4462c0aaf24202))
+
 ## [1.9.16](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.15...v1.9.16) (2026-03-13)
 
 
