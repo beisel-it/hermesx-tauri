@@ -4,13 +4,12 @@ mod credentials;
 mod persistence;
 mod monitor;
 mod screen_lock;
-#[allow(non_snake_case)]
-mod zeusX;
+mod zeus_x;
 
 use hermesx_core::config::UserConfig;
 use hermesx_core::notification::NotificationManager;
 use hermesx_core::state_machine::{apply_transition, available_actions};
-use zeusX::{action_from_key, dispatch};
+use zeus_x::{action_from_key, dispatch};
 
 use std::sync::{Arc, Mutex};
 use tauri_plugin_positioner::{Position, WindowExt};
@@ -159,11 +158,11 @@ async fn perform_manual_action(
     state: State<'_, AppState>,
 ) -> Result<serde_json::Value, String> {
     let dry_run = state.config.lock().unwrap().dry_run;
-    let zeus_action = zeusX::action_from_key(&action_key)
+    let zeus_action = zeus_x::action_from_key(&action_key)
         .ok_or_else(|| format!("Unknown zeus action: {}", action_key))?;
 
     let creds = state.credentials.lock().unwrap().clone();
-    let result = zeusX::dispatch(zeus_action, dry_run, creds).await;
+    let result = zeus_x::dispatch(zeus_action, dry_run, creds).await;
     Ok(serde_json::json!({
         "action": action_key,
         "dry_run": dry_run,

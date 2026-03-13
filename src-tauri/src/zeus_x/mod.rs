@@ -4,7 +4,6 @@
 //!   →  { "id": string, "action": string, "dry_run"?: bool, "credentials"?: {...} }
 //!   ←  { "id": string, "ok": bool, "result"?: string, "error"?: string }
 
-pub mod selectors;
 
 use serde::{Deserialize, Serialize};
 use std::io::{BufRead, Write};
