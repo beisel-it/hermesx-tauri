@@ -1,3 +1,10 @@
+## [1.3.2](https://github.com/beisel-it/hermesx-tauri/compare/v1.3.1...v1.3.2) (2026-03-13)
+
+
+### Bug Fixes
+
+* **rust:** MutexGuard not Send across await (scope drop before dispatch), RGBA icon ([7bfc6ab](https://github.com/beisel-it/hermesx-tauri/commit/7bfc6ab08d719c7c83a2c66e04ff14cccf32d3d3))
+
 ## [1.3.1](https://github.com/beisel-it/hermesx-tauri/compare/v1.3.0...v1.3.1) (2026-03-13)
 
 
