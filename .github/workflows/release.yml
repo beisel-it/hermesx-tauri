@@ -27,13 +27,13 @@ jobs:
         with:
           node-version: 20
 
-      - run: yarn install --no-frozen-lockfile || true
+      - run: npm install --legacy-peer-deps
 
       - name: Semantic Release
         id: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: yarn release
+        run: npm run release
 
   # ── Build Tauri (only when a new release was published) ───────────────────
   build-tauri:
@@ -82,8 +82,8 @@ jobs:
             libwebkit2gtk-4.1-dev libappindicator3-dev \
             librsvg2-dev patchelf lld
 
-      - run: yarn install --no-frozen-lockfile || true
-      - run: yarn build || true  # frontend build — ok to skip until src/ exists
+      - run: npm install --legacy-peer-deps
+      - run: npm run build || true  # frontend build — ok to skip until src/ exists
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0

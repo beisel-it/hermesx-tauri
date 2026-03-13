@@ -61,7 +61,7 @@ jobs:
         with:
           node-version: 20
       - run: npm install -g yarn
-      - run: yarn install --no-frozen-lockfile || true
+      - run: npm install --legacy-peer-deps
       - name: cargo check (tauri app)
         run: cargo check -p hermesx-tauri --manifest-path src-tauri/Cargo.toml
 
@@ -75,9 +75,9 @@ jobs:
         with:
           node-version: 20
       - run: npm install -g yarn
-      - run: yarn install --no-frozen-lockfile || true
-      - run: yarn lint || echo "No src yet — skip"
-      - run: yarn check || echo "No src yet — skip"
+      - run: npm install --legacy-peer-deps
+      - run: npm run lint || echo "No src yet — skip"
+      - run: npm run check || echo "No src yet — skip"
 
   # ── Commitlint ─────────────────────────────────────────────────────────────
   commitlint:
@@ -92,5 +92,5 @@ jobs:
         with:
           node-version: 20
       - run: npm install -g yarn
-      - run: yarn install --no-frozen-lockfile || true
-      - run: yarn commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+      - run: npm install --legacy-peer-deps
+      - run: npm run commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose

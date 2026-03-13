@@ -4,6 +4,8 @@ Cargo.lock
 
 # Node
 node_modules/
+# Keep lockfile
+!package-lock.json
 dist/
 .svelte-kit/
 
