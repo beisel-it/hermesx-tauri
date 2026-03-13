@@ -82,15 +82,13 @@ fn sidecar_cmd() -> Command {
 
 /// Dispatch a ZeusX action via the Node.js sidecar.
 /// Returns the sidecar response or an error string.
-pub async fn dispatch(action: ZeusAction, dry_run: bool) -> Result<SidecarResponse, String> {
-    // Credentials: load from credential store (US-019, currently empty stub)
-    let creds = load_credentials();
+pub async fn dispatch(action: ZeusAction, dry_run: bool, creds: Option<crate::credentials::StoredCredentials>) -> Result<SidecarResponse, String> {
 
     let req = SidecarRequest {
         id:          Uuid::new_v4().to_string(),
         action:      &action.key,
         dry_run,
-        credentials: creds,
+        credentials: creds.map(|c| SidecarCredentials { username: c.username, password: c.password }),
     };
 
     let json = serde_json::to_string(&req).map_err(|e| e.to_string())?;
@@ -121,10 +119,4 @@ pub async fn dispatch(action: ZeusAction, dry_run: bool) -> Result<SidecarRespon
     serde_json::from_str(&line).map_err(|e| format!("bad sidecar response: {e}"))
 }
 
-/// Load credentials from OS keychain (stub — US-019).
-fn load_credentials() -> Option<SidecarCredentials> {
-    credentials::load_credentials().map(|c| SidecarCredentials {
-        username: c.username,
-        password: c.password,
-    })
-}
+
