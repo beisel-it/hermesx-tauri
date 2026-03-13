@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/beisel-it/hermesx-tauri/compare/v1.6.1...v1.7.0) (2026-03-13)
+
+
+### Features
+
+* **us-007:** screen lock detection — Windows WTS, macOS DistributedNotificationCenter, Linux D-Bus (zbus) ([831bab8](https://github.com/beisel-it/hermesx-tauri/commit/831bab8cd62efc3e5b5d73282ddcd230e2e714bf))
+
 ## [1.6.1](https://github.com/beisel-it/hermesx-tauri/compare/v1.6.0...v1.6.1) (2026-03-13)
 
 
