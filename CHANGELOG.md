@@ -1,3 +1,10 @@
+## [1.9.3](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.2...v1.9.3) (2026-03-13)
+
+
+### Bug Fixes
+
+* **windows:** WTSQuerySessionInformationW expects *mut PWSTR not &mut *mut u16 ([220eacd](https://github.com/beisel-it/hermesx-tauri/commit/220eacddbc81f76ddca5495d0c5722c8bcf92b08))
+
 ## [1.9.2](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.1...v1.9.2) (2026-03-13)
 
 
