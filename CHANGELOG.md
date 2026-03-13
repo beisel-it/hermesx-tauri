@@ -1,3 +1,10 @@
+## [1.9.18](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.17...v1.9.18) (2026-03-13)
+
+
+### Bug Fixes
+
+* **sidecar:** actually rebuild dist/index.js with pending counter (previous commit had stale bundle) ([8186ceb](https://github.com/beisel-it/hermesx-tauri/commit/8186ceb81bfc00a017bacdf83648486dbb0bdef3))
+
 ## [1.9.17](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.16...v1.9.17) (2026-03-13)
 
 
