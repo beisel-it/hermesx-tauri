@@ -1,6 +1,6 @@
 [package]
 name = "hermesx-tauri"
-version = "1.9.14"
+version = "1.9.15"
 edition = "2021"
 
 [build-dependencies]

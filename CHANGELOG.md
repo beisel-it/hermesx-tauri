@@ -1,3 +1,10 @@
+## [1.9.15](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.14...v1.9.15) (2026-03-13)
+
+
+### Bug Fixes
+
+* **sidecar:** commit pre-built dist/index.js so Mac dev doesn't require local sidecar build ([3645d32](https://github.com/beisel-it/hermesx-tauri/commit/3645d3279d3ba7b75501e9fdccb5b5496f20a1cf))
+
 ## [1.9.14](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.13...v1.9.14) (2026-03-13)
 
 
