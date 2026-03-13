@@ -79,6 +79,17 @@ fn get_config(state: State<AppState>) -> UserConfig {
     state.config.lock().unwrap().clone()
 }
 
+#[tauri::command]
+fn set_config(config: UserConfig, state: State<AppState>) -> Result<(), String> {
+    *state.config.lock().unwrap() = config;
+    Ok(())
+}
+
+#[tauri::command]
+fn _unused(state: State<AppState>) -> UserConfig {
+    state.config.lock().unwrap().clone()
+}
+
 fn main() {
     tauri::Builder::default()
         .manage(AppState {
