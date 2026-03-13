@@ -1,3 +1,10 @@
+## [1.9.6](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.5...v1.9.6) (2026-03-13)
+
+
+### Bug Fixes
+
+* **sidecar:** align action keys with selectors.rs (mobiles-arbeiten-start/end, pause-mobil etc), use correct INTERSPORT terminal selectors ([51d8649](https://github.com/beisel-it/hermesx-tauri/commit/51d86490fefe438ddf5ea9437e6b223c75ac11a8))
+
 ## [1.9.5](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.4...v1.9.5) (2026-03-13)
 
 
