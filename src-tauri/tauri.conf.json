@@ -1,0 +1,14 @@
+{
+  "productName": "HermesX",
+  "version": "1.0.0",
+  "identifier": "de.datenba.hermesx",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420"
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": []
+  }
+}
