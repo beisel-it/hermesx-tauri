@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/beisel-it/hermesx-tauri/compare/v1.6.0...v1.6.1) (2026-03-13)
+
+
+### Bug Fixes
+
+* **tauri:** remove externalBin (node spawned directly, not Tauri sidecar), add shell capabilities ([3edb6be](https://github.com/beisel-it/hermesx-tauri/commit/3edb6beaf461a847f4c242bc8d727a1ec5173b67))
+
 # [1.6.0](https://github.com/beisel-it/hermesx-tauri/compare/v1.5.0...v1.6.0) (2026-03-13)
 
 
