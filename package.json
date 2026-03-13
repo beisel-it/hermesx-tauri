@@ -3,7 +3,7 @@
   "version": "1.4.0",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run build:sidecar && vite build",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
@@ -13,7 +13,9 @@
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test:unit": "vitest run",
     "commitlint": "commitlint",
-    "release": "semantic-release"
+    "release": "semantic-release",
+    "build:sidecar": "cd src-sidecar && npm install --legacy-peer-deps && npm run build",
+    "build:ui": "vite build"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",

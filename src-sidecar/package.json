@@ -1,0 +1,18 @@
+{
+  "name": "zeus-sidecar",
+  "version": "1.0.0",
+  "description": "ZeusX Playwright sidecar for HermesX",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=node --outfile=dist/index.js --external:playwright",
+    "dev": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "playwright": "^1.44.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "esbuild": "^0.21.0",
+    "typescript": "^5.0.0"
+  }
+}

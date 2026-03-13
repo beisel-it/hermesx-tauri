@@ -1,103 +1,120 @@
-// zeusX/mod.rs — ZeusX automation scaffold
-//
-// ARCHITECTURE:
-//   All ZeusX calls go through `dispatch()`.
-//   dry_run=true → log what *would* happen, never touch ZeusX.
-//   dry_run=false → invoke the Node.js sidecar (Playwright).
-//
-// WORK PACKAGE: WILBUR-20260313-015
-//   The sidecar implementation is a separate WP.
-//   This module defines the interface contract.
+//! ZeusX dispatcher — spawns the Node.js sidecar and communicates via JSON stdio.
+//!
+//! Protocol (per line, JSON):
+//!   →  { "id": string, "action": string, "dry_run"?: bool, "credentials"?: {...} }
+//!   ←  { "id": string, "ok": bool, "result"?: string, "error"?: string }
 
 pub mod selectors;
 
 use serde::{Deserialize, Serialize};
+use std::io::{BufRead, BufReader, Write};
+use std::process::{Command, Stdio};
+use uuid::Uuid;
 
-/// All supported ZeusX terminal button actions.
-/// Maps 1:1 to selectors::TERMINAL_BUTTONS keys.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum ZeusXAction {
-    MobilesArbeitenStart,
-    MobilesArbeitenEnd,
-    PauseMobil,
-    In,
-    Out,
-    InOut,
+/// One ZeusX action the sidecar can execute.
+#[derive(Debug, Clone)]
+pub struct ZeusAction {
+    pub key: &'static str,
 }
 
-impl ZeusXAction {
-    pub fn selector_key(&self) -> &'static str {
-        match self {
-            ZeusXAction::MobilesArbeitenStart => "mobiles-arbeiten-start",
-            ZeusXAction::MobilesArbeitenEnd   => "mobiles-arbeiten-end",
-            ZeusXAction::PauseMobil           => "pause-mobil",
-            ZeusXAction::In                   => "in",
-            ZeusXAction::Out                  => "out",
-            ZeusXAction::InOut                => "in-out",
-        }
-    }
-
-    pub fn human_label(&self) -> &'static str {
-        match self {
-            ZeusXAction::MobilesArbeitenStart => "Mobiles Arbeiten starten",
-            ZeusXAction::MobilesArbeitenEnd   => "Mobiles Arbeiten beenden",
-            ZeusXAction::PauseMobil           => "Pause (Mobiles Arbeiten)",
-            ZeusXAction::In                   => "Kommen (IN)",
-            ZeusXAction::Out                  => "Gehen (OUT)",
-            ZeusXAction::InOut                => "IN / OUT Toggle",
-        }
-    }
-}
-
-/// Result returned to callers — same shape for dry-run and real runs.
-#[derive(Debug, Serialize, Deserialize)]
-pub struct DispatchResult {
-    pub action: ZeusXAction,
-    pub dry_run: bool,
-    pub success: bool,
-    pub message: String,
-}
-
-/// Central dispatch point.
-///
-/// In dry-run mode: logs intent, returns Ok immediately, never spawns sidecar.
-/// In real mode: delegates to sidecar (WILBUR-20260313-015, not yet implemented).
-pub async fn dispatch(action: ZeusXAction, dry_run: bool) -> Result<DispatchResult, String> {
-    let label = action.human_label();
-    let key = action.selector_key();
-
-    if dry_run {
-        let msg = format!(
-            "[DRY RUN] Would click '{}' (selector key: '{}')",
-            label, key
-        );
-        eprintln!("{}", msg);
-        return Ok(DispatchResult {
-            action,
-            dry_run: true,
-            success: true,
-            message: msg,
-        });
-    }
-
-    // TODO (WILBUR-20260313-015): spawn Node.js sidecar, pass action key, await result
-    Err(format!(
-        "ZeusX real dispatch not yet implemented. \
-         Use dry_run=true or wait for WILBUR-20260313-015. Action: {}",
-        label
-    ))
-}
-
-/// Convenience: parse a state_machine zeusX_action string into a ZeusXAction.
-pub fn action_from_key(key: &str) -> Option<ZeusXAction> {
+/// A Tauri WorkAction may reference a ZeusX action by key.
+pub fn action_from_key(key: &str) -> Option<ZeusAction> {
     match key {
-        "mobiles-arbeiten-start" => Some(ZeusXAction::MobilesArbeitenStart),
-        "mobiles-arbeiten-end"   => Some(ZeusXAction::MobilesArbeitenEnd),
-        "pause-mobil"            => Some(ZeusXAction::PauseMobil),
-        "in"                     => Some(ZeusXAction::In),
-        "out"                    => Some(ZeusXAction::Out),
-        "in-out"                 => Some(ZeusXAction::InOut),
-        _                        => None,
+        "start_work"  => Some(ZeusAction { key: "start_work"  }),
+        "end_work"    => Some(ZeusAction { key: "end_work"    }),
+        "start_break" => Some(ZeusAction { key: "start_break" }),
+        "end_break"   => Some(ZeusAction { key: "end_break"   }),
+        _ => None,
     }
+}
+
+#[derive(Serialize)]
+struct SidecarRequest<'a> {
+    id:       String,
+    action:   &'a str,
+    dry_run:  bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    credentials: Option<SidecarCredentials>,
+}
+
+#[derive(Serialize, Clone)]
+struct SidecarCredentials {
+    username: String,
+    password: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct SidecarResponse {
+    pub id:     String,
+    pub ok:     bool,
+    pub result: Option<String>,
+    pub error:  Option<String>,
+}
+
+/// Find the sidecar binary.
+/// In dev: look for node + dist/index.js relative to cargo workspace.
+/// In production: Tauri bundles the sidecar via tauri.conf.json externalBin.
+fn sidecar_cmd() -> Command {
+    // Production path (Tauri sidecar): tauri resolves this automatically.
+    // Dev path: node + script alongside binary.
+    let script = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(|d| d.join("zeus-sidecar.js")))
+        .unwrap_or_else(|| {
+            // Fallback: relative to workspace root during dev
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .parent().unwrap()
+                .join("src-sidecar/dist/index.js")
+        });
+
+    let mut cmd = Command::new("node");
+    cmd.arg(script);
+    cmd
+}
+
+/// Dispatch a ZeusX action via the Node.js sidecar.
+/// Returns the sidecar response or an error string.
+pub async fn dispatch(action: ZeusAction, dry_run: bool) -> Result<SidecarResponse, String> {
+    // Credentials: load from credential store (US-019, currently empty stub)
+    let creds = load_credentials();
+
+    let req = SidecarRequest {
+        id:          Uuid::new_v4().to_string(),
+        action:      action.key,
+        dry_run,
+        credentials: creds,
+    };
+
+    let json = serde_json::to_string(&req).map_err(|e| e.to_string())?;
+
+    // Spawn sidecar, write request, read response — one-shot per call.
+    // TODO (US-015): Keep sidecar process alive for session reuse.
+    let mut child = sidecar_cmd()
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+        .map_err(|e| format!("Failed to spawn zeus-sidecar: {e}"))?;
+
+    {
+        let stdin = child.stdin.as_mut().ok_or("no stdin")?;
+        stdin.write_all(format!("{json}\n").as_bytes())
+            .map_err(|e| e.to_string())?;
+    } // stdin closed → sidecar reads EOF, processes, exits
+
+    let output = child.wait_with_output().map_err(|e| e.to_string())?;
+
+    let line = output.stdout
+        .lines()
+        .next()
+        .and_then(|l| l.ok())
+        .ok_or_else(|| "no response from sidecar".to_string())?;
+
+    serde_json::from_str(&line).map_err(|e| format!("bad sidecar response: {e}"))
+}
+
+/// Load credentials from OS keychain (stub — US-019).
+fn load_credentials() -> Option<SidecarCredentials> {
+    // TODO: tauri-plugin-keyring integration
+    None
 }

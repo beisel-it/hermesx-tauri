@@ -25,3 +25,5 @@ Thumbs.db
 # Env
 .env
 .env.local
+src-sidecar/node_modules/
+src-sidecar/dist/
