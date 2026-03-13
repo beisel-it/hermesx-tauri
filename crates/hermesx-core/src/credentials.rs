@@ -27,9 +27,9 @@ pub enum CredentialError {
 impl std::fmt::Display for CredentialError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            CredentialError::MissingUsername    => write!(f, "Username is required"),
-            CredentialError::MissingPassword    => write!(f, "Password is required"),
-            CredentialError::StorageError(msg)  => write!(f, "Storage error: {}", msg),
+            CredentialError::MissingUsername => write!(f, "Username is required"),
+            CredentialError::MissingPassword => write!(f, "Password is required"),
+            CredentialError::StorageError(msg) => write!(f, "Storage error: {}", msg),
         }
     }
 }
@@ -107,26 +107,40 @@ mod tests {
     #[test]
     fn delete_clears_store() {
         let mut store = InMemoryStore::default();
-        store.save(&ZeusXCredentials { username: "x".into(), password: "y".into() }).unwrap();
+        store
+            .save(&ZeusXCredentials {
+                username: "x".into(),
+                password: "y".into(),
+            })
+            .unwrap();
         store.delete().unwrap();
         assert!(store.load().unwrap().is_none());
     }
 
     #[test]
     fn validation_rejects_empty_username() {
-        let creds = ZeusXCredentials { username: "  ".into(), password: "pw".into() };
+        let creds = ZeusXCredentials {
+            username: "  ".into(),
+            password: "pw".into(),
+        };
         assert_eq!(validate(&creds), Err(CredentialError::MissingUsername));
     }
 
     #[test]
     fn validation_rejects_empty_password() {
-        let creds = ZeusXCredentials { username: "user".into(), password: "".into() };
+        let creds = ZeusXCredentials {
+            username: "user".into(),
+            password: "".into(),
+        };
         assert_eq!(validate(&creds), Err(CredentialError::MissingPassword));
     }
 
     #[test]
     fn validation_passes_valid_creds() {
-        let creds = ZeusXCredentials { username: "florian".into(), password: "secure".into() };
+        let creds = ZeusXCredentials {
+            username: "florian".into(),
+            password: "secure".into(),
+        };
         assert!(validate(&creds).is_ok());
     }
 }

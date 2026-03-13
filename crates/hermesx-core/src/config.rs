@@ -12,10 +12,10 @@ pub struct StartTime {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkSchedule {
     pub start_time: StartTime,
-    pub work_duration: f32,   // hours
-    pub break_duration: u32,  // minutes
+    pub work_duration: f32,  // hours
+    pub break_duration: u32, // minutes
     pub is_flexible: bool,
-    pub workdays: [bool; 7],  // [Sun, Mon, Tue, Wed, Thu, Fri, Sat]
+    pub workdays: [bool; 7], // [Sun, Mon, Tue, Wed, Thu, Fri, Sat]
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -46,7 +46,10 @@ impl Default for UserConfig {
     fn default() -> Self {
         Self {
             schedule: WorkSchedule {
-                start_time: StartTime { hour: 8, minute: 30 },
+                start_time: StartTime {
+                    hour: 8,
+                    minute: 30,
+                },
                 work_duration: 8.0,
                 break_duration: 30,
                 is_flexible: true,

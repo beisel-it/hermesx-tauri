@@ -51,7 +51,8 @@ impl NotificationManager {
 
     /// Set a per-type cooldown override (e.g. overtime reminder every 30min).
     pub fn set_cooldown(&mut self, event_type: &str, cooldown_ms: i64) {
-        self.cooldown_overrides.insert(event_type.to_string(), cooldown_ms);
+        self.cooldown_overrides
+            .insert(event_type.to_string(), cooldown_ms);
     }
 
     /// Check if a notification of this type can fire right now.
@@ -61,7 +62,8 @@ impl NotificationManager {
         if self.is_suppressed() {
             return false;
         }
-        let cooldown = self.cooldown_overrides
+        let cooldown = self
+            .cooldown_overrides
             .get(event_type)
             .copied()
             .unwrap_or(self.default_cooldown_ms);
@@ -106,7 +108,8 @@ impl NotificationManager {
     /// Time remaining until next notification of this type is allowed (ms).
     /// Returns 0 if ready now.
     pub fn cooldown_remaining_ms(&self, event_type: &str) -> i64 {
-        let cooldown = self.cooldown_overrides
+        let cooldown = self
+            .cooldown_overrides
             .get(event_type)
             .copied()
             .unwrap_or(self.default_cooldown_ms);
@@ -164,8 +167,8 @@ mod tests {
     #[test]
     fn notify_if_ready_marks_on_fire() {
         let mut mgr = NotificationManager::new(60_000);
-        assert!(mgr.notify_if_ready("overtime"));    // fires + marks
-        assert!(!mgr.notify_if_ready("overtime"));   // blocked
+        assert!(mgr.notify_if_ready("overtime")); // fires + marks
+        assert!(!mgr.notify_if_ready("overtime")); // blocked
     }
 
     #[test]

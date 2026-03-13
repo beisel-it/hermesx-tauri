@@ -17,18 +17,18 @@ impl WorkState {
     pub fn emoji(&self) -> &'static str {
         match self {
             WorkState::NotWorking => "🏠",
-            WorkState::Working    => "⚡",
-            WorkState::Paused     => "☕",
-            WorkState::Finished   => "🏠",
+            WorkState::Working => "⚡",
+            WorkState::Paused => "☕",
+            WorkState::Finished => "🏠",
         }
     }
 
     pub fn label(&self) -> &'static str {
         match self {
             WorkState::NotWorking => "Not Working",
-            WorkState::Working    => "Working",
-            WorkState::Paused     => "On Break",
-            WorkState::Finished   => "Done for today",
+            WorkState::Working => "Working",
+            WorkState::Paused => "On Break",
+            WorkState::Finished => "Done for today",
         }
     }
 }
@@ -75,13 +75,11 @@ impl Default for PersistedState {
 
 pub fn available_actions(state: &WorkState) -> Vec<WorkAction> {
     match state {
-        WorkState::NotWorking => vec![
-            WorkAction {
-                label: "Start Work".into(),
-                next_state: WorkState::Working,
-                zeusX_action: Some("mobiles-arbeiten-start".into()),
-            },
-        ],
+        WorkState::NotWorking => vec![WorkAction {
+            label: "Start Work".into(),
+            next_state: WorkState::Working,
+            zeusX_action: Some("mobiles-arbeiten-start".into()),
+        }],
         WorkState::Working => vec![
             WorkAction {
                 label: "Start Break".into(),

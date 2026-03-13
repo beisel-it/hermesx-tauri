@@ -47,8 +47,8 @@ pub struct MonitorContext {
     pub scheduled_end_ms: i64,
     /// Minimum ms between repeated notifications of the same type (default: 5 min)
     pub last_notified: std::collections::HashMap<String, i64>,
-    pub inactivity_threshold_ms: u64,   // from config
-    pub short_break_threshold_ms: u64,  // from config
+    pub inactivity_threshold_ms: u64,  // from config
+    pub short_break_threshold_ms: u64, // from config
 }
 
 const COOLDOWN_MS: i64 = 5 * 60 * 1000;
@@ -77,7 +77,9 @@ pub fn evaluate(ctx: &MonitorContext) -> Vec<MonitorEvent> {
     if ctx.is_working {
         // Inactivity
         if ctx.idle_ms >= ctx.inactivity_threshold_ms && ctx.should_notify("inactivity") {
-            events.push(MonitorEvent::InactivityDetected { idle_ms: ctx.idle_ms });
+            events.push(MonitorEvent::InactivityDetected {
+                idle_ms: ctx.idle_ms,
+            });
         }
 
         // Continuous work → break reminder
@@ -104,7 +106,9 @@ pub fn evaluate(ctx: &MonitorContext) -> Vec<MonitorEvent> {
         if let Some(expected) = ctx.expected_break_return_ms {
             if now > expected && ctx.should_notify("break-overrun") {
                 let overrun = (now - expected) as u64;
-                events.push(MonitorEvent::BreakOverrun { overrun_ms: overrun });
+                events.push(MonitorEvent::BreakOverrun {
+                    overrun_ms: overrun,
+                });
             }
         }
     }
@@ -156,7 +160,9 @@ mod tests {
         let mut ctx = base_ctx();
         ctx.idle_ms = 20 * 60 * 1000; // 20 min idle
         let events = evaluate(&ctx);
-        assert!(events.iter().any(|e| matches!(e, MonitorEvent::InactivityDetected { .. })));
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, MonitorEvent::InactivityDetected { .. })));
     }
 
     #[test]
@@ -173,7 +179,9 @@ mod tests {
         ctx.is_paused = true;
         ctx.expected_break_return_ms = Some(now_ms() - 10 * 60 * 1000); // 10min overdue
         let events = evaluate(&ctx);
-        assert!(events.iter().any(|e| matches!(e, MonitorEvent::BreakOverrun { .. })));
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, MonitorEvent::BreakOverrun { .. })));
     }
 
     #[test]
@@ -181,6 +189,8 @@ mod tests {
         let mut ctx = base_ctx();
         ctx.scheduled_end_ms = now_ms() - 10 * 60 * 1000; // 10min past end
         let events = evaluate(&ctx);
-        assert!(events.iter().any(|e| matches!(e, MonitorEvent::EndOfDay { .. })));
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, MonitorEvent::EndOfDay { .. })));
     }
 }
