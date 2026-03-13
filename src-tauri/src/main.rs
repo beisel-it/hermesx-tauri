@@ -23,6 +23,7 @@ struct AppState {
     notification_mgr: Arc<Mutex<NotificationManager>>,
     work_state: Mutex<hermesx_core::state_machine::PersistedState>,
     config: Mutex<UserConfig>,
+    credentials: Mutex<Option<credentials::StoredCredentials>>,
 }
 
 fn build_tray_menu(app: &AppHandle, label: &str) -> tauri::Result<Menu<tauri::Wry>> {
@@ -89,7 +90,10 @@ async fn perform_action(
     // --- ZeusX dispatch (async, kein Lock gehalten) ---
     let zeus_result = if let Some(key) = &action.zeusX_action {
         if let Some(zeus_action) = action_from_key(key) {
-            Some(dispatch(zeus_action, dry_run).await)
+            {
+                let creds = state.credentials.lock().unwrap().clone();
+                Some(dispatch(zeus_action, dry_run, creds).await)
+            }
         } else { None }
     } else { None };
 
@@ -150,14 +154,15 @@ fn delete_credentials() -> Result<(), String> {
 #[tauri::command]
 async fn perform_manual_action(
     action_key: String,
-    app: AppHandle,
+    _app: AppHandle,
     state: State<'_, AppState>,
 ) -> Result<serde_json::Value, String> {
     let dry_run = state.config.lock().unwrap().dry_run;
     let zeus_action = zeusX::action_from_key(&action_key)
         .ok_or_else(|| format!("Unknown zeus action: {}", action_key))?;
 
-    let result = zeusX::dispatch(zeus_action, dry_run).await;
+    let creds = state.credentials.lock().unwrap().clone();
+    let result = zeusX::dispatch(zeus_action, dry_run, creds).await;
     Ok(serde_json::json!({
         "action": action_key,
         "dry_run": dry_run,
@@ -198,6 +203,7 @@ fn main() {
                 work_state:       Mutex::new(work_state),
                 config:           Mutex::new(config),
                 notification_mgr: Arc::clone(&nm),
+                credentials:      Mutex::new(credentials::load_credentials()),
             });
             monitor::spawn_monitor(app.handle().clone(), nm);
             screen_lock::start_listener(app.handle().clone());
@@ -218,7 +224,7 @@ fn main() {
                 .tooltip(format!("{} {}", emoji, label))
                 .title(&emoji)
                 .on_menu_event(|app, event| match event.id.as_ref() {
-                    "show" => { if let Some(w) = app.get_webview_window("main") { let _ = w.show(); let _ = w.set_focus(); } }
+                    "show" => { if let Some(w) = app.get_webview_window("main") { let _ = w.move_window(Position::TrayBottomCenter); let _ = w.show(); let _ = w.set_focus(); } }
                     "quit" => app.exit(0),
                     _ => {}
                 })

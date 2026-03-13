@@ -6,7 +6,6 @@
 
 pub mod selectors;
 
-use crate::credentials;
 use serde::{Deserialize, Serialize};
 use std::io::{BufRead, Write};
 use std::process::{Command, Stdio};
@@ -31,7 +30,7 @@ pub fn action_from_key(key: &str) -> Option<ZeusAction> {
         "in-out"                 |
         "bereitschaft-start"     |
         "bereitschaft-stop"      |
-        "dienstgang"             => Some(ZeusAction { key: Box::leak(key.to_string().into_boxed_str()) }),
+        "dienstgang"             => Some(ZeusAction { key: key.to_string() }),
         _ => None,
     }
 }

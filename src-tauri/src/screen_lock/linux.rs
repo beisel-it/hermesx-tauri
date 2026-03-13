@@ -18,9 +18,7 @@ pub fn start(app: AppHandle) {
 
 async fn listen_dbus(app: AppHandle) -> zbus::Result<()> {
     use zbus::Connection;
-    use zbus::fdo::PropertiesProxy;
-    use zbus::MessageStream;
-    use futures::stream::StreamExt; // futures crate, not futures_util
+            use futures::stream::StreamExt; // futures crate, not futures_util
 
     let conn = Connection::session().await?;
 
