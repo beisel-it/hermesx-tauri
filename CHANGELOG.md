@@ -1,3 +1,10 @@
+## [1.3.3](https://github.com/beisel-it/hermesx-tauri/compare/v1.3.2...v1.3.3) (2026-03-13)
+
+
+### Bug Fixes
+
+* **ci:** add full icon set (32x32, 128x128, ico) required by Tauri bundler ([c74a30c](https://github.com/beisel-it/hermesx-tauri/commit/c74a30cdf3fa41e48054b918309d3354eca63b6f))
+
 ## [1.3.2](https://github.com/beisel-it/hermesx-tauri/compare/v1.3.1...v1.3.2) (2026-03-13)
 
 
