@@ -12,7 +12,7 @@ use hermesx_core::state_machine::{apply_transition, available_actions};
 use zeusX::{action_from_key, dispatch};
 
 use std::sync::{Arc, Mutex};
-use tauri::{
+use tauri::{Listener,
     AppHandle, Manager, State,
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
