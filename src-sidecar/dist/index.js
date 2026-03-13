@@ -96,24 +96,34 @@ async function handleRequest(req) {
   }
 }
 var rl = readline.createInterface({ input: process.stdin, terminal: false });
+var pending = 0;
+var closing = false;
+async function shutdown() {
+  if (browser) await browser.close();
+  process.exit(0);
+}
 rl.on("line", async (line) => {
   const trimmed = line.trim();
   if (!trimmed) return;
+  pending++;
   let req;
   try {
     req = JSON.parse(trimmed);
   } catch {
     process.stdout.write(JSON.stringify({ id: "parse_error", ok: false, error: "invalid JSON" }) + "\n");
+    pending--;
+    if (closing && pending === 0) await shutdown();
     return;
   }
   const resp = await handleRequest(req);
   process.stdout.write(JSON.stringify(resp) + "\n");
+  pending--;
+  if (closing && pending === 0) await shutdown();
 });
 rl.on("close", async () => {
-  if (browser) await browser.close();
-  process.exit(0);
+  closing = true;
+  if (pending === 0) await shutdown();
 });
 process.on("SIGTERM", async () => {
-  if (browser) await browser.close();
-  process.exit(0);
+  await shutdown();
 });

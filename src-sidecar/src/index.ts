@@ -1,12 +1,11 @@
 /**
  * zeus-sidecar — Playwright automation sidecar for HermesX
- * Keys mirror zeusX/selectors.rs TERMINAL_BUTTONS
+ * Keys mirror BUTTONS map in this file (used by Rust zeus_x/mod.rs)
  */
 
 import { chromium, Browser, BrowserContext, Page } from "playwright";
 import * as readline from "readline";
 
-// ── Selectors (mirrors zeusX/selectors.rs) ───────────────────────────────────
 const BUTTONS: Record<string, { id: string; text: string }> = {
   "in-out":               { id: "#TerminalButton0", text: "IN / OUT" },
   "in":                   { id: "#TerminalButton1", text: "IN" },
@@ -64,7 +63,6 @@ async function ensureLoggedIn(p: Page, creds: Credentials): Promise<void> {
 async function clickButton(p: Page, key: string): Promise<string> {
   const btn = BUTTONS[key];
   if (!btn) throw new Error(`unknown action key: ${key}`);
-  // Try ID first, then text fallback
   try {
     await p.waitForSelector(btn.id, { timeout: 8000 });
     await p.click(btn.id);
@@ -98,15 +96,43 @@ async function handleRequest(req: Request): Promise<Response> {
   }
 }
 
+// ── Pending counter: don't exit before async handlers finish ─────────────────
 const rl = readline.createInterface({ input: process.stdin, terminal: false });
+let pending = 0;
+let closing = false;
+
+async function shutdown(): Promise<void> {
+  if (browser) await browser.close();
+  process.exit(0);
+}
+
 rl.on("line", async (line) => {
   const trimmed = line.trim();
   if (!trimmed) return;
+
+  pending++;
   let req: Request;
-  try { req = JSON.parse(trimmed); }
-  catch { process.stdout.write(JSON.stringify({ id: "parse_error", ok: false, error: "invalid JSON" }) + "\n"); return; }
+  try {
+    req = JSON.parse(trimmed);
+  } catch {
+    process.stdout.write(JSON.stringify({ id: "parse_error", ok: false, error: "invalid JSON" }) + "\n");
+    pending--;
+    if (closing && pending === 0) await shutdown();
+    return;
+  }
+
   const resp = await handleRequest(req);
   process.stdout.write(JSON.stringify(resp) + "\n");
+  pending--;
+  if (closing && pending === 0) await shutdown();
 });
-rl.on("close", async () => { if (browser) await browser.close(); process.exit(0); });
-process.on("SIGTERM", async () => { if (browser) await browser.close(); process.exit(0); });
+
+rl.on("close", async () => {
+  closing = true;
+  if (pending === 0) await shutdown();
+  // else: last line handler calls shutdown() when pending reaches 0
+});
+
+process.on("SIGTERM", async () => {
+  await shutdown();
+});
