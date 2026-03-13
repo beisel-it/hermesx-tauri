@@ -72,7 +72,7 @@ pub async fn dispatch(action: ZeusXAction, dry_run: bool) -> Result<DispatchResu
             "[DRY RUN] Would click '{}' (selector key: '{}')",
             label, key
         );
-        log::info!("{}", msg);
+        eprintln!("{}", msg);
         return Ok(DispatchResult {
             action,
             dry_run: true,
