@@ -1,11 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
 
-export interface WorkAction {
-  label: string;
-  next_state: string;
-  zeusX_action: string | null;
-}
-
 export interface AppStatus {
   state: string;
   emoji: string;
@@ -14,34 +8,29 @@ export interface AppStatus {
   total_worked_ms: number;
   finished_for_today: boolean;
   dry_run: boolean;
-  available_actions: WorkAction[];
+  available_actions: Array<{ label: string; zeusX_action?: string }>;
 }
 
-export interface UserConfig {
-  schedule: {
-    start_time: { hour: number; minute: number };
-    work_duration: number;
-    break_duration: number;
-    is_flexible: boolean;
-    workdays: boolean[];
-  };
-  notifications: {
-    quiet_mode: boolean;
-    smart_flexibility: boolean;
-    work_mode_detection: boolean;
-    suppress_during_calls: boolean;
-    suppress_during_gaming: boolean;
-  };
-  inactivity: {
-    short_break_reminder: number;
-    auto_break_suggestion: number;
-  };
-  debug: boolean;
+export interface ActionResult {
+  transition?: unknown;
+  zeusX?: {
+    id?: string;
+    ok?: boolean;
+    result?: string;
+    error?: string;
+  } | null;
+}
+
+export interface ManualResult {
+  action: string;
   dry_run: boolean;
+  result: { id?: string; ok?: boolean; result?: string; error?: string };
 }
 
-export const getStatus   = ()                         => invoke<AppStatus>('get_status');
-export const getConfig   = ()                         => invoke<UserConfig>('get_config');
-export const setConfig   = (config: UserConfig)       => invoke<void>('set_config', { config });
-export const setDryRun   = (enabled: boolean)         => invoke<{ dry_run: boolean }>('set_dry_run', { enabled });
-export const performAction = (actionLabel: string)    => invoke<unknown>('perform_action', { actionLabel });
+export const getStatus = () => invoke<AppStatus>('get_status');
+
+export const performAction = (label: string) =>
+  invoke<ActionResult>('perform_action', { actionLabel: label });
+
+export const performManualAction = (actionKey: string) =>
+  invoke<ManualResult>('perform_manual_action', { actionKey });

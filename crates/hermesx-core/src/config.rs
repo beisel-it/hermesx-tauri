@@ -39,7 +39,8 @@ pub struct UserConfig {
     pub notifications: NotificationPreferences,
     pub inactivity: InactivityThresholds,
     pub debug: bool,
-    pub dry_run: bool, // First-class: never touch ZeusX when true
+    pub dry_run: bool,     // First-class: never touch ZeusX when true
+    pub manual_mode: bool, // Show manual booking buttons in UI
 }
 
 impl Default for UserConfig {
@@ -68,6 +69,7 @@ impl Default for UserConfig {
             },
             debug: false,
             dry_run: false,
+            manual_mode: false,
         }
     }
 }

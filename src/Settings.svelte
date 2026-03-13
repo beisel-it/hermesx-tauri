@@ -114,6 +114,14 @@
         }} />
       Dry Run (kein ZeusX-Zugriff)
     </label>
+    <label>
+      <input type="checkbox"
+        checked={config?.manual_mode ?? false}
+        onchange={(e) => {
+          config = { ...config, manual_mode: e.currentTarget.checked };
+        }} />
+      Manuelle Buchungen anzeigen
+    </label>
   </section>
 
   <button class="primary" onclick={() => onSave(config)}>Speichern</button>

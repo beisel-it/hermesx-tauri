@@ -146,6 +146,28 @@ fn delete_credentials() -> Result<(), String> {
     credentials::delete_credentials()
 }
 
+#[tauri::command]
+async fn perform_manual_action(
+    action_key: String,
+    app: AppHandle,
+    state: State<'_, AppState>,
+) -> Result<serde_json::Value, String> {
+    let dry_run = state.config.lock().unwrap().dry_run;
+    let zeus_action = zeusX::action_from_key(&action_key)
+        .ok_or_else(|| format!("Unknown zeus action: {}", action_key))?;
+
+    let result = zeusX::dispatch(zeus_action, dry_run).await;
+    Ok(serde_json::json!({
+        "action": action_key,
+        "dry_run": dry_run,
+        "result": match result {
+            Ok(r) => serde_json::json!(r),
+            Err(e) => serde_json::json!({ "error": e }),
+        }
+    }))
+}
+
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
@@ -210,6 +232,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             get_status, perform_action, get_config, set_config, set_dry_run,
             save_credentials, load_credentials_status, delete_credentials,
+            perform_manual_action,
         ])
         .run(tauri::generate_context!())
         .expect("error while running HermesX");
