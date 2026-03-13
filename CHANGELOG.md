@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/beisel-it/hermesx-tauri/compare/v1.0.0...v1.1.0) (2026-03-13)
+
+
+### Features
+
+* **frontend:** add Svelte 5 UI (App, Settings, tauri IPC wrappers, vite config) ([d291ebe](https://github.com/beisel-it/hermesx-tauri/commit/d291ebe2ba6d5a85616d44af1e69289ee75b6330))
+
 # 1.0.0 (2026-03-13)
 
 
