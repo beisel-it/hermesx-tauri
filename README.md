@@ -48,6 +48,13 @@ ci: add windows arm64 build target
 ```
 
 ### Release
+Releases are fully automated via [semantic-release](https://semantic-release.gitbook.io/) on push to `main`:
+- `fix:` commits → patch release (1.0.x)
+- `feat:` commits → minor release (1.x.0)
+- `BREAKING CHANGE:` in footer → major release (x.0.0)
+
+No manual tagging needed.
+
 1. Update `CHANGELOG.md` under `[Unreleased]`
 2. Bump version in `src-tauri/Cargo.toml`, `package.json`, `src-tauri/tauri.conf.json`
 3. Commit: `chore(release): v1.0.0`

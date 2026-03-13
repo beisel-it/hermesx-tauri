@@ -13,7 +13,8 @@
     "format": "prettier --write src",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test:unit": "vitest run",
-    "commitlint": "commitlint"
+    "commitlint": "commitlint",
+    "release": "semantic-release"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
@@ -39,6 +40,13 @@
     "prettier-plugin-svelte": "^3",
     "svelte-check": "^4",
     "vitest": "^2",
-    "husky": "^9"
+    "husky": "^9",
+    "semantic-release": "^24",
+    "@semantic-release/changelog": "^6",
+    "@semantic-release/exec": "^6",
+    "@semantic-release/git": "^10",
+    "@semantic-release/github": "^10",
+    "@semantic-release/commit-analyzer": "^13",
+    "@semantic-release/release-notes-generator": "^14"
   }
 }

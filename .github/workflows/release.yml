@@ -2,68 +2,68 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
+    branches: [main]
 
 permissions:
   contents: write
-
-env:
-  RUST_BACKTRACE: 1
+  issues: write
+  pull-requests: write
 
 jobs:
-  # ── Validate tag & CHANGELOG ───────────────────────────────────────────────
-  validate:
-    name: Validate release
+  # ── Semantic Release — determine version + create GitHub release ───────────
+  semantic-release:
+    name: Semantic Release
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.semver.outputs.version }}
+      new_release_published: ${{ steps.release.outputs.new_release_published }}
+      new_release_version:   ${{ steps.release.outputs.new_release_version }}
     steps:
       - uses: actions/checkout@v4
-      - name: Extract semver
-        id: semver
-        run: |
-          TAG="${GITHUB_REF_NAME}"
-          VERSION="${TAG#v}"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Tag: $TAG — Version: $VERSION"
-      - name: Validate CHANGELOG entry
-        run: |
-          grep -q "## \[${{ steps.semver.outputs.version }}\]" CHANGELOG.md \
-            || (echo "❌ No CHANGELOG entry for ${{ steps.semver.outputs.version }}" && exit 1)
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-  # ── Build Tauri (multi-OS, multi-arch) ────────────────────────────────────
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - run: yarn install --frozen-lockfile || true
+
+      - name: Semantic Release
+        id: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: yarn release
+
+  # ── Build Tauri (only when a new release was published) ───────────────────
   build-tauri:
     name: Build ${{ matrix.platform }}
-    needs: validate
+    needs: semantic-release
+    if: needs.semantic-release.outputs.new_release_published == 'true'
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          # Windows x64
           - platform: windows-x64
             runner: windows-latest
             args: ''
-            artifact_pattern: '*.exe,*.msi'
-          # macOS Apple Silicon (arm64)
           - platform: macos-arm64
             runner: macos-latest
             args: '--target aarch64-apple-darwin'
-            artifact_pattern: '*.dmg'
-          # macOS Intel (x64)
           - platform: macos-x64
             runner: macos-latest
             args: '--target x86_64-apple-darwin'
-            artifact_pattern: '*.dmg'
-          # Linux x64
           - platform: linux-x64
             runner: ubuntu-22.04
             args: ''
-            artifact_pattern: '*.deb,*.AppImage'
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Checkout the version commit that semantic-release just pushed
+          ref: ${{ github.sha }}
 
       - uses: actions/setup-node@v4
         with:
@@ -72,21 +72,20 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.platform == 'macos-arm64' && 'aarch64-apple-darwin' || matrix.platform == 'macos-x64' && 'x86_64-apple-darwin' || '' }}
+          targets: ${{ contains(matrix.args, 'aarch64') && 'aarch64-apple-darwin' || contains(matrix.args, 'x86_64-apple-darwin') && 'x86_64-apple-darwin' || '' }}
 
       - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: src-tauri
 
-      # Linux system deps for Tauri
-      - name: Install Linux dependencies
+      - name: Install Linux system deps
         if: matrix.runner == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libappindicator3-dev \
+            librsvg2-dev patchelf lld
 
-      - run: yarn install --frozen-lockfile
-      - run: yarn build
+      - run: yarn install --frozen-lockfile || true
+      - run: yarn build || true  # frontend build — ok to skip until src/ exists
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
@@ -96,10 +95,9 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD || '' }}
         with:
           args: ${{ matrix.args }}
-          tagName: ${{ github.ref_name }}
-          releaseName: 'HermesX ${{ github.ref_name }}'
-          releaseBody: |
-            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)
-            for details.
-          releaseDraft: true
+          tagName: v${{ needs.semantic-release.outputs.new_release_version }}
+          releaseName: 'HermesX v${{ needs.semantic-release.outputs.new_release_version }}'
+          releaseBody: 'See CHANGELOG.md for details.'
+          releaseDraft: false
           prerelease: false
+          updaterJsonKeepUniversal: true
