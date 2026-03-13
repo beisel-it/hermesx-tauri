@@ -1,3 +1,10 @@
+## [1.9.14](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.13...v1.9.14) (2026-03-13)
+
+
+### Bug Fixes
+
+* **sidecar:** dev path uses CARGO_MANIFEST_DIR (reliable), production falls back to next-to-binary; fix MANUAL_ACTIONS keys to match sidecar (mobiles-arbeiten-start etc) ([d8d5b66](https://github.com/beisel-it/hermesx-tauri/commit/d8d5b667665c19e50bcf35d9a3dc8d1562844a82))
+
 ## [1.9.13](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.12...v1.9.13) (2026-03-13)
 
 
