@@ -1,56 +1,87 @@
-//! macOS: DistributedNotificationCenter — com.apple.screenIsLocked/Unlocked
+//! macOS screen lock detection via CGSession polling.
+//!
+//! Polls CGSessionCopyCurrentDictionary() every 5 seconds.
+//! No Objective-C runtime, no blocks — pure C FFI via libloading.
+//!
+//! CGSSessionScreenIsLocked key is undocumented but stable since macOS 10.6.
 
+use std::ffi::CString;
+use std::os::raw::c_void;
 use tauri::{AppHandle, Emitter};
 
 pub fn start(app: AppHandle) {
-    // DistributedNotificationCenter observers must run on the main thread.
-    // We register them in a way that's safe with Tauri's runtime.
     std::thread::spawn(move || {
-        use objc2::runtime::NSObject;
-        use objc2_foundation::{NSDistributedNotificationCenter, NSString};
-
-        unsafe {
-            let center = NSDistributedNotificationCenter::defaultCenter();
-
-            let app_lock   = app.clone();
-            let app_unlock = app.clone();
-
-            let lock_name   = NSString::from_str("com.apple.screenIsLocked");
-            let unlock_name = NSString::from_str("com.apple.screenIsUnlocked");
-
-            // Use block-based observer
-            let block_lock = objc2::rc::Retained::from_raw(
-                objc2::block2::StackBlock::new(move |_notif: *mut NSObject| {
-                    let _ = app_lock.emit("screen-lock", serde_json::json!({"locked": true}));
-                }) as *mut _
-            );
-
-            let block_unlock = objc2::rc::Retained::from_raw(
-                objc2::block2::StackBlock::new(move |_notif: *mut NSObject| {
-                    let _ = app_unlock.emit("screen-lock", serde_json::json!({"locked": false}));
-                }) as *mut _
-            );
-
-            // Register observers
-            let _: () = objc2::msg_send![
-                center,
-                addObserverForName: &*lock_name,
-                object: std::ptr::null_mut::<NSObject>(),
-                queue: std::ptr::null_mut::<NSObject>(),
-                usingBlock: block_lock
-            ];
-            let _: () = objc2::msg_send![
-                center,
-                addObserverForName: &*unlock_name,
-                object: std::ptr::null_mut::<NSObject>(),
-                queue: std::ptr::null_mut::<NSObject>(),
-                usingBlock: block_unlock
-            ];
-        }
-
-        // Keep thread alive (run loop needed for NSDistributedNotificationCenter)
+        let mut was_locked = false;
         loop {
-            std::thread::sleep(std::time::Duration::from_secs(60));
+            let locked = is_screen_locked();
+            if locked != was_locked {
+                was_locked = locked;
+                let _ = app.emit("screen-lock", serde_json::json!({ "locked": locked }));
+            }
+            std::thread::sleep(std::time::Duration::from_secs(5));
         }
     });
+}
+
+fn is_screen_locked() -> bool {
+    unsafe { is_screen_locked_impl().unwrap_or(false) }
+}
+
+unsafe fn is_screen_locked_impl() -> Option<bool> {
+    use libloading::Library;
+
+    let cg = Library::new(
+        "/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics",
+    ).ok()?;
+    let cf = Library::new(
+        "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation",
+    ).ok()?;
+
+    // CGSessionCopyCurrentDictionary() -> CFDictionaryRef (caller releases)
+    type CopyDictFn = unsafe extern "C" fn() -> *mut c_void;
+    let copy_dict: libloading::Symbol<CopyDictFn> =
+        cg.get(b"CGSessionCopyCurrentDictionary\0").ok()?;
+
+    // CFStringCreateWithCString(alloc, cStr, encoding) -> CFStringRef
+    type CfStrFn = unsafe extern "C" fn(*const c_void, *const i8, u32) -> *mut c_void;
+    let cf_str_create: libloading::Symbol<CfStrFn> =
+        cf.get(b"CFStringCreateWithCString\0").ok()?;
+
+    // CFDictionaryGetValue(dict, key) -> *const void
+    type CfDictGetFn = unsafe extern "C" fn(*mut c_void, *mut c_void) -> *mut c_void;
+    let cf_dict_get: libloading::Symbol<CfDictGetFn> =
+        cf.get(b"CFDictionaryGetValue\0").ok()?;
+
+    // CFBooleanGetValue(boolean) -> bool
+    type CfBoolFn = unsafe extern "C" fn(*mut c_void) -> bool;
+    let cf_bool_get: libloading::Symbol<CfBoolFn> =
+        cf.get(b"CFBooleanGetValue\0").ok()?;
+
+    // CFRelease(cf_type)
+    type CfRelFn = unsafe extern "C" fn(*mut c_void);
+    let cf_release: libloading::Symbol<CfRelFn> =
+        cf.get(b"CFRelease\0").ok()?;
+
+    let dict = copy_dict();
+    if dict.is_null() {
+        return None;
+    }
+
+    // kCFStringEncodingUTF8 = 0x08000100
+    let key_cstr = CString::new("CGSSessionScreenIsLocked").ok()?;
+    let key = cf_str_create(std::ptr::null(), key_cstr.as_ptr(), 0x0800_0100);
+    if key.is_null() {
+        cf_release(dict);
+        return None;
+    }
+
+    let value = cf_dict_get(dict, key);
+    cf_release(key);
+    cf_release(dict);
+
+    if value.is_null() {
+        return Some(false);
+    }
+
+    Some(cf_bool_get(value))
 }

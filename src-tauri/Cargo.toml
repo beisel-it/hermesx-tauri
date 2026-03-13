@@ -7,6 +7,7 @@ edition = "2021"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+libloading = "0.8"
 keyring = "2"
 uuid = { version = "1", features = ["v4"] }
 chrono = { version = "0.4", features = ["clock"] }
@@ -35,9 +36,7 @@ windows = { version = "0.58", features = [
     "Win32_Foundation",
 ]}
 
-[target.'cfg(target_os = "macos")'.dependencies]
-objc2 = "0.5"
-objc2-foundation = { version = "0.2", features = ["NSDistributedNotificationCenter", "NSString", "NSNotification"] }
+# macOS: libloading (cross-platform dep above) handles CGSession polling
 
 [target.'cfg(target_os = "linux")'.dependencies]
 zbus = { version = "4", default-features = false, features = ["tokio"] }

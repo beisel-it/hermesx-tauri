@@ -173,7 +173,7 @@ fn main() {
             // React to screen-lock events
             let nm_lock = Arc::clone(&app.state::<AppState>().notification_mgr);
             let app_for_lock = app.handle().clone();
-            app.listen("screen-lock", move |event| {
+            app.handle().listen("screen-lock", move |event| {
                 if let Ok(payload) = serde_json::from_str::<serde_json::Value>(event.payload()) {
                     let locked = payload.get("locked").and_then(|v| v.as_bool()).unwrap_or(false);
                     monitor::handle_screen_lock_event(&app_for_lock, locked, &nm_lock);
