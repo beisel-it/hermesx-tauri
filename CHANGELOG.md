@@ -1,3 +1,10 @@
+## [1.8.1](https://github.com/beisel-it/hermesx-tauri/compare/v1.8.0...v1.8.1) (2026-03-13)
+
+
+### Bug Fixes
+
+* **settings:** load config via get_config IPC (not from status), dry_run now persists correctly ([81830ce](https://github.com/beisel-it/hermesx-tauri/commit/81830ce146666eca2a1819ea065222eed2282f5a))
+
 # [1.8.0](https://github.com/beisel-it/hermesx-tauri/compare/v1.7.3...v1.8.0) (2026-03-13)
 
 
