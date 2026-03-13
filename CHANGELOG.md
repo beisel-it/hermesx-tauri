@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/beisel-it/hermesx-tauri/compare/v1.5.0...v1.6.0) (2026-03-13)
+
+
+### Features
+
+* **keychain:** OS credential storage via keyring crate (US-019) + credential UI in Settings (US-020) ([653b0a8](https://github.com/beisel-it/hermesx-tauri/commit/653b0a82d986bcf6a211a27da2fa105854400b81))
+
 # [1.5.0](https://github.com/beisel-it/hermesx-tauri/compare/v1.4.0...v1.5.0) (2026-03-13)
 
 
