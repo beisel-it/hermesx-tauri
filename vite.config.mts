@@ -4,11 +4,16 @@ import { svelte } from '@sveltejs/vite-plugin-svelte';
 export default defineConfig({
   plugins: [svelte()],
   clearScreen: false,
-  server: { port: 1420, strictPort: true },
+  server: {
+    port: 1420,
+    strictPort: true,
+    watch: { ignored: ['**/src-tauri/**'] },
+  },
   envPrefix: ['VITE_', 'TAURI_'],
   build: {
     target: ['es2021', 'chrome105', 'safari15'],
-    minify: !process.env.TAURI_DEBUG,
+    minify: !process.env.TAURI_DEBUG ? 'esbuild' : false,
     sourcemap: !!process.env.TAURI_DEBUG,
+    outDir: 'dist',
   },
 });
