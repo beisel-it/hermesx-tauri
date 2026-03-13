@@ -27,3 +27,17 @@ codegen-units = 1
 lto = true
 opt-level = "s"
 strip = true
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "0.58", features = [
+    "Win32_System_RemoteDesktop",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_Foundation",
+]}
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.5"
+objc2-foundation = { version = "0.2", features = ["NSDistributedNotificationCenter", "NSString", "NSNotification"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+zbus = { version = "4", default-features = false, features = ["tokio"] }

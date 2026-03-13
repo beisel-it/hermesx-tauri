@@ -3,6 +3,7 @@
 mod credentials;
 mod persistence;
 mod monitor;
+mod screen_lock;
 mod zeusX;
 
 use hermesx_core::config::UserConfig;
@@ -167,6 +168,17 @@ fn main() {
                 notification_mgr: Arc::clone(&nm),
             });
             monitor::spawn_monitor(app.handle().clone(), nm);
+            screen_lock::start_listener(app.handle().clone());
+
+            // React to screen-lock events
+            let nm_lock = Arc::clone(&app.state::<AppState>().notification_mgr);
+            let app_for_lock = app.handle().clone();
+            app.listen("screen-lock", move |event| {
+                if let Ok(payload) = serde_json::from_str::<serde_json::Value>(event.payload()) {
+                    let locked = payload.get("locked").and_then(|v| v.as_bool()).unwrap_or(false);
+                    monitor::handle_screen_lock_event(&app_for_lock, locked, &nm_lock);
+                }
+            });
 
             let menu = build_tray_menu(app.handle(), &format!("{} {}", emoji, label))?;
             TrayIconBuilder::with_id("main")

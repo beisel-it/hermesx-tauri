@@ -19,6 +19,39 @@ pub fn spawn_monitor(app: AppHandle, nm: Arc<Mutex<NotificationManager>>) {
     });
 }
 
+/// React to screen-lock events emitted by screen_lock module.
+pub fn handle_screen_lock_event(app: &AppHandle, locked: bool, nm: &Arc<Mutex<NotificationManager>>) {
+    if !locked {
+        return; // unlock — no action needed
+    }
+
+    let state  = app.state::<crate::AppState>();
+    let ws     = state.work_state.lock().unwrap().clone();
+    let cfg    = state.config.lock().unwrap().clone();
+
+    use hermesx_core::state_machine::WorkState;
+    if !matches!(ws.current_state, WorkState::Working) {
+        return; // not clocked in — nothing to do
+    }
+
+    if cfg.notifications.quiet_mode {
+        return;
+    }
+
+    let key = "lock_screen";
+    let mut nm_guard = nm.lock().unwrap();
+    if nm_guard.notify_if_ready(key) {
+        drop(nm_guard);
+        use tauri_plugin_notification::NotificationExt;
+        let _ = app
+            .notification()
+            .builder()
+            .title("🔒 Bildschirm gesperrt")
+            .body("Du bist noch eingecheckt.")
+            .show();
+    }
+}
+
 fn build_context(ws: &PersistedState, cfg: &UserConfig) -> MonitorContext {
     use hermesx_core::work_monitor::now_ms;
 
