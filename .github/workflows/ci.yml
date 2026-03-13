@@ -11,7 +11,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  # ── Core lib (no Tauri system deps needed) ────────────────────────────────
+  # Pure Rust — no system deps needed
   test-core:
     name: Core tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -24,29 +24,13 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: cargo test -p hermesx-core
+      - run: cargo clippy -p hermesx-core -- -D warnings
+      - run: cargo fmt -p hermesx-core -- --check
 
-  lint-core:
-    name: Rust lint (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@v2
-      - name: fmt check
-        run: cargo fmt -p hermesx-core -- --check
-      - name: clippy
-        run: cargo clippy -p hermesx-core -- -D warnings
-
-  # ── Tauri app build check (Ubuntu only, needs system libs) ─────────────────
-  build-check:
-    name: Tauri build check
-    runs-on: ubuntu-latest
+  # Tauri binary — needs webkit2gtk, Linux only
+  build-check-tauri:
+    name: Tauri build check (Linux)
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -60,12 +44,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install -g yarn
       - run: npm install --legacy-peer-deps
-      - name: cargo check (tauri app)
+      - name: cargo check (tauri)
         run: cargo check -p hermesx-tauri --manifest-path src-tauri/Cargo.toml
 
-  # ── Frontend ───────────────────────────────────────────────────────────────
+  # Frontend
   lint-frontend:
     name: Frontend lint
     runs-on: ubuntu-latest
@@ -74,12 +57,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install -g yarn
       - run: npm install --legacy-peer-deps
-      - run: npm run lint || echo "No src yet — skip"
-      - run: npm run check || echo "No src yet — skip"
+      - run: npm run lint || echo "No src linted yet"
 
-  # ── Commitlint ─────────────────────────────────────────────────────────────
   commitlint:
     name: Commitlint
     runs-on: ubuntu-latest
@@ -91,6 +71,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install -g yarn
       - run: npm install --legacy-peer-deps
-      - run: npm run commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+      - run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
