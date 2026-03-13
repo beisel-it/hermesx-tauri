@@ -112,12 +112,16 @@ pub async fn dispatch(action: ZeusAction, dry_run: bool, creds: Option<crate::cr
 
     // Spawn sidecar, write request, read response — one-shot per call.
     // TODO (US-015): Keep sidecar process alive for session reuse.
-    let mut child = sidecar_cmd()
+    let mut cmd = sidecar_cmd();
+    let script_path = format!("{:?}", cmd.get_args().next().unwrap_or(std::ffi::OsStr::new("?")));
+    let node_bin   = format!("{:?}", cmd.get_program());
+
+    let mut child = cmd
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())   // capture stderr for diagnostics
+        .stderr(Stdio::piped())
         .spawn()
-        .map_err(|e| format!("Failed to spawn zeus-sidecar (is node in PATH?): {e}"))?;
+        .map_err(|e| format!("spawn failed — node={node_bin} script={script_path}: {e}"))?;
 
     {
         let stdin = child.stdin.as_mut().ok_or("no stdin")?;
@@ -130,9 +134,9 @@ pub async fn dispatch(action: ZeusAction, dry_run: bool, creds: Option<crate::cr
     if !output.status.success() || output.stdout.is_empty() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         return Err(format!(
-            "sidecar error (exit={:?}): {}",
+            "sidecar error (node={node_bin} script={script_path} exit={:?}): {}",
             output.status.code(),
-            if stderr.is_empty() { "no output" } else { stderr.trim() }
+            if stderr.is_empty() { "no stdout" } else { stderr.trim() }
         ));
     }
 
