@@ -32,11 +32,15 @@
       {
         "label": "main",
         "title": "HermesX",
-        "width": 260,
-        "height": 420,
+        "width": 320,
+        "height": 520,
         "resizable": false,
-        "decorations": true,
-        "visible": false
+        "decorations": false,
+        "shadow": true,
+        "visible": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "center": false
       }
     ],
     "trayIcon": {
