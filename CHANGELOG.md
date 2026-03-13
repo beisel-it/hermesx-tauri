@@ -1,3 +1,15 @@
+# [1.8.0](https://github.com/beisel-it/hermesx-tauri/compare/v1.7.3...v1.8.0) (2026-03-13)
+
+
+### Bug Fixes
+
+* **tray:** close hides window instead of quitting (prevent_close on CloseRequested) ([a14b1b0](https://github.com/beisel-it/hermesx-tauri/commit/a14b1b08ae09dc1afde3b910992265b89696cac5))
+
+
+### Features
+
+* **ui:** proper tray popup — 320×520, no decorations, custom titlebar with drag, dark design system ([598a50d](https://github.com/beisel-it/hermesx-tauri/commit/598a50dbee820e6bce76132e516a26090fed701d))
+
 ## [1.7.3](https://github.com/beisel-it/hermesx-tauri/compare/v1.7.2...v1.7.3) (2026-03-13)
 
 
