@@ -1,3 +1,11 @@
+## [1.9.11](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.10...v1.9.11) (2026-03-13)
+
+
+### Bug Fixes
+
+* **lint:** svelte-eslint-parser with typescript, remove unused ActionResult import, any→unknown ([db2552a](https://github.com/beisel-it/hermesx-tauri/commit/db2552a32d9c3348b4bc4487096d4683da7eb1c2))
+* linux build green — credentials cache in AppState, dispatch signature, positioner move_window, clean unused imports ([93c3571](https://github.com/beisel-it/hermesx-tauri/commit/93c3571040e12dd0419e3452cdcf372feea10b5a))
+
 ## [1.9.10](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.9...v1.9.10) (2026-03-13)
 
 
