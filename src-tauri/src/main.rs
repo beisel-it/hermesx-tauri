@@ -1,13 +1,15 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod persistence;
+mod monitor;
 mod zeusX;
 
 use hermesx_core::config::UserConfig;
+use hermesx_core::notification::NotificationManager;
 use hermesx_core::state_machine::{apply_transition, available_actions};
 use zeusX::{action_from_key, dispatch};
 
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use tauri::{
     AppHandle, Manager, State,
     menu::{Menu, MenuItem},
@@ -15,6 +17,7 @@ use tauri::{
 };
 
 struct AppState {
+    notification_mgr: Arc<Mutex<NotificationManager>>,
     work_state: Mutex<hermesx_core::state_machine::PersistedState>,
     config: Mutex<UserConfig>,
 }
@@ -138,10 +141,13 @@ fn main() {
             let emoji = work_state.current_state.emoji().to_string();
             let label = work_state.current_state.label().to_string();
 
+            let nm = Arc::new(Mutex::new(NotificationManager::new(5 * 60 * 1000)));
             app.manage(AppState {
-                work_state: Mutex::new(work_state),
-                config:     Mutex::new(config),
+                work_state:       Mutex::new(work_state),
+                config:           Mutex::new(config),
+                notification_mgr: Arc::clone(&nm),
             });
+            monitor::spawn_monitor(app.handle().clone(), nm);
 
             let menu = build_tray_menu(app.handle(), &format!("{} {}", emoji, label))?;
             TrayIconBuilder::with_id("main")
