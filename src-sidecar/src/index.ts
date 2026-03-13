@@ -1,26 +1,28 @@
 /**
  * zeus-sidecar — Playwright automation sidecar for HermesX
- * Keys mirror BUTTONS map in this file (used by Rust zeus_x/mod.rs)
+ * Login flow and selectors ported directly from zeus-punch/src/
  */
 
 import { chromium, Browser, BrowserContext, Page } from "playwright";
 import * as readline from "readline";
 
-const BUTTONS: Record<string, { id: string; text: string }> = {
-  "in-out":               { id: "#TerminalButton0", text: "IN / OUT" },
-  "in":                   { id: "#TerminalButton1", text: "IN" },
-  "out":                  { id: "#TerminalButton2", text: "OUT" },
-  "pause":                { id: "#TerminalButton3", text: "Pause" },
-  "mobiles-arbeiten-start": { id: "#TerminalButton4", text: "Mobiles Arbeiten beg" },
-  "mobiles-arbeiten-end":   { id: "#TerminalButton5", text: "Mobiles Arbeiten end" },
-  "pause-mobil":            { id: "#TerminalButton6", text: "Pause mob. Arbeiten" },
-  "bereitschaft-start":   { id: "#TerminalButton7", text: "Bereitschaft START" },
-  "bereitschaft-stop":    { id: "#TerminalButton8", text: "Bereitschaft STOP" },
-  "dienstgang":           { id: "#TerminalButton9", text: "Dienstgang" },
+// ── Selectors (from zeus-punch/src/selectors.ts) ─────────────────────────────
+const BUTTONS: Record<string, { id: string }> = {
+  "in-out":               { id: "#TerminalButton0" },
+  "in":                   { id: "#TerminalButton1" },
+  "out":                  { id: "#TerminalButton2" },
+  "pause":                { id: "#TerminalButton3" },
+  "mobiles-arbeiten-start": { id: "#TerminalButton4" },
+  "mobiles-arbeiten-end":   { id: "#TerminalButton5" },
+  "pause-mobil":            { id: "#TerminalButton6" },
+  "bereitschaft-start":   { id: "#TerminalButton7" },
+  "bereitschaft-stop":    { id: "#TerminalButton8" },
+  "dienstgang":           { id: "#TerminalButton9" },
 };
 
-const TERMINAL_URL = "https://isg.intersport.de/terminal";
-const SEL_BOOKING_OK = ".buchungsnachricht, .success, [class*='erfolgreich']";
+// From zeus-punch/src/config.ts
+const BASE_URL = "https://zeusx.intersport.de/ZEUSX/Environment/Account/LogOn.aspx";
+const TIMEOUT  = 30_000;
 
 interface Credentials { username: string; password: string; }
 interface Request {
@@ -46,34 +48,53 @@ async function ensureBrowser(): Promise<Page> {
   return page!;
 }
 
-async function ensureLoggedIn(p: Page, creds: Credentials): Promise<void> {
-  await p.goto(TERMINAL_URL, { waitUntil: "domcontentloaded" });
-  const onTerminal = await p.locator("#TerminalButton4").count();
-  if (onTerminal > 0) return;
+// Ported from zeus-punch/src/login.ts
+async function login(p: Page, creds: Credentials): Promise<void> {
+  await p.goto(BASE_URL, { waitUntil: "networkidle", timeout: TIMEOUT });
+
+  // Step 1: Username — DevExpress widget, use JS click like zeus-punch does
+  await p.waitForSelector("#uiUserName_I", { timeout: TIMEOUT });
   await p.fill("#uiUserName_I", creds.username);
+  await p.evaluate(() => (document.getElementById("uiNextButton") as HTMLElement)?.click());
+
+  // Step 2: Password — ASP.NET postback, wait for field
+  await p.waitForTimeout(2000);
+  await p.waitForSelector("#uiPassword_I", { state: "visible", timeout: TIMEOUT });
   await p.fill("#uiPassword_I", creds.password);
-  await p.click("#uiNextButton");
-  await p.waitForLoadState("domcontentloaded");
-  try {
-    await p.click("#uiLogOnButton", { timeout: 3000 });
-    await p.waitForLoadState("domcontentloaded");
-  } catch { /* already logged in */ }
+  await p.evaluate(() => (document.getElementById("uiLogOnButton") as HTMLElement)?.click());
+
+  // Wait for dashboard
+  await p.waitForURL("**/workspace.aspx**", { timeout: TIMEOUT });
 }
 
+async function ensureLoggedIn(p: Page, creds: Credentials): Promise<void> {
+  // Check if already on terminal (buttons visible)
+  const hasButtons = await p.locator("#TerminalButton4").count().catch(() => 0);
+  if (hasButtons > 0) return;
+
+  // Not logged in or not on terminal — login first
+  await login(p, creds);
+}
+
+// Ported from zeus-punch/src/punch.ts — JS click to avoid DevExpress overlay
 async function clickButton(p: Page, key: string): Promise<string> {
   const btn = BUTTONS[key];
   if (!btn) throw new Error(`unknown action key: ${key}`);
+
+  await p.waitForSelector(btn.id, { state: "visible", timeout: TIMEOUT });
+  const buttonId = btn.id.replace("#", "");
+  await p.evaluate((id) => (document.getElementById(id) as HTMLElement)?.click(), buttonId);
+
+  // Wait for server response
+  await p.waitForTimeout(3000);
+
+  // Try to read confirmation
   try {
-    await p.waitForSelector(btn.id, { timeout: 8000 });
-    await p.click(btn.id);
+    const alert = await p.locator('[role="alert"], .alert, .buchungsnachricht, .status-message').first();
+    const text = await alert.innerText({ timeout: 3000 });
+    return text.trim() || `${key} executed`;
   } catch {
-    await p.click(`button:has-text("${btn.text}")`);
-  }
-  try {
-    await p.waitForSelector(SEL_BOOKING_OK, { timeout: 6000 });
-    return (await p.locator(SEL_BOOKING_OK).first().innerText()).trim();
-  } catch {
-    return `${key} clicked`;
+    return `${key} executed`;
   }
 }
 
@@ -130,7 +151,6 @@ rl.on("line", async (line) => {
 rl.on("close", async () => {
   closing = true;
   if (pending === 0) await shutdown();
-  // else: last line handler calls shutdown() when pending reaches 0
 });
 
 process.on("SIGTERM", async () => {

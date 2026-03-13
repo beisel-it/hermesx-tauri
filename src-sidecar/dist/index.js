@@ -26,19 +26,19 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 var import_playwright = require("playwright");
 var readline = __toESM(require("readline"));
 var BUTTONS = {
-  "in-out": { id: "#TerminalButton0", text: "IN / OUT" },
-  "in": { id: "#TerminalButton1", text: "IN" },
-  "out": { id: "#TerminalButton2", text: "OUT" },
-  "pause": { id: "#TerminalButton3", text: "Pause" },
-  "mobiles-arbeiten-start": { id: "#TerminalButton4", text: "Mobiles Arbeiten beg" },
-  "mobiles-arbeiten-end": { id: "#TerminalButton5", text: "Mobiles Arbeiten end" },
-  "pause-mobil": { id: "#TerminalButton6", text: "Pause mob. Arbeiten" },
-  "bereitschaft-start": { id: "#TerminalButton7", text: "Bereitschaft START" },
-  "bereitschaft-stop": { id: "#TerminalButton8", text: "Bereitschaft STOP" },
-  "dienstgang": { id: "#TerminalButton9", text: "Dienstgang" }
+  "in-out": { id: "#TerminalButton0" },
+  "in": { id: "#TerminalButton1" },
+  "out": { id: "#TerminalButton2" },
+  "pause": { id: "#TerminalButton3" },
+  "mobiles-arbeiten-start": { id: "#TerminalButton4" },
+  "mobiles-arbeiten-end": { id: "#TerminalButton5" },
+  "pause-mobil": { id: "#TerminalButton6" },
+  "bereitschaft-start": { id: "#TerminalButton7" },
+  "bereitschaft-stop": { id: "#TerminalButton8" },
+  "dienstgang": { id: "#TerminalButton9" }
 };
-var TERMINAL_URL = "https://isg.intersport.de/terminal";
-var SEL_BOOKING_OK = ".buchungsnachricht, .success, [class*='erfolgreich']";
+var BASE_URL = "https://zeusx.intersport.de/ZEUSX/Environment/Account/LogOn.aspx";
+var TIMEOUT = 3e4;
 var browser = null;
 var context = null;
 var page = null;
@@ -50,34 +50,35 @@ async function ensureBrowser() {
   }
   return page;
 }
-async function ensureLoggedIn(p, creds) {
-  await p.goto(TERMINAL_URL, { waitUntil: "domcontentloaded" });
-  const onTerminal = await p.locator("#TerminalButton4").count();
-  if (onTerminal > 0) return;
+async function login(p, creds) {
+  await p.goto(BASE_URL, { waitUntil: "networkidle", timeout: TIMEOUT });
+  await p.waitForSelector("#uiUserName_I", { timeout: TIMEOUT });
   await p.fill("#uiUserName_I", creds.username);
+  await p.evaluate(() => document.getElementById("uiNextButton")?.click());
+  await p.waitForTimeout(2e3);
+  await p.waitForSelector("#uiPassword_I", { state: "visible", timeout: TIMEOUT });
   await p.fill("#uiPassword_I", creds.password);
-  await p.click("#uiNextButton");
-  await p.waitForLoadState("domcontentloaded");
-  try {
-    await p.click("#uiLogOnButton", { timeout: 3e3 });
-    await p.waitForLoadState("domcontentloaded");
-  } catch {
-  }
+  await p.evaluate(() => document.getElementById("uiLogOnButton")?.click());
+  await p.waitForURL("**/workspace.aspx**", { timeout: TIMEOUT });
+}
+async function ensureLoggedIn(p, creds) {
+  const hasButtons = await p.locator("#TerminalButton4").count().catch(() => 0);
+  if (hasButtons > 0) return;
+  await login(p, creds);
 }
 async function clickButton(p, key) {
   const btn = BUTTONS[key];
   if (!btn) throw new Error(`unknown action key: ${key}`);
+  await p.waitForSelector(btn.id, { state: "visible", timeout: TIMEOUT });
+  const buttonId = btn.id.replace("#", "");
+  await p.evaluate((id) => document.getElementById(id)?.click(), buttonId);
+  await p.waitForTimeout(3e3);
   try {
-    await p.waitForSelector(btn.id, { timeout: 8e3 });
-    await p.click(btn.id);
+    const alert = await p.locator('[role="alert"], .alert, .buchungsnachricht, .status-message').first();
+    const text = await alert.innerText({ timeout: 3e3 });
+    return text.trim() || `${key} executed`;
   } catch {
-    await p.click(`button:has-text("${btn.text}")`);
-  }
-  try {
-    await p.waitForSelector(SEL_BOOKING_OK, { timeout: 6e3 });
-    return (await p.locator(SEL_BOOKING_OK).first().innerText()).trim();
-  } catch {
-    return `${key} clicked`;
+    return `${key} executed`;
   }
 }
 async function handleRequest(req) {
