@@ -1,149 +1,112 @@
 /**
  * zeus-sidecar — Playwright automation sidecar for HermesX
- *
- * Protocol (stdin/stdout, one JSON object per line):
- *   IN:  { "id": string, "action": "start_work"|"end_work"|"start_break"|"end_break"|"ping", "credentials"?: {...} }
- *   OUT: { "id": string, "ok": boolean, "result"?: string, "error"?: string }
- *
- * Managed by Tauri sidecar spawn. Exits cleanly on stdin close.
+ * Keys mirror zeusX/selectors.rs TERMINAL_BUTTONS
  */
 
 import { chromium, Browser, BrowserContext, Page } from "playwright";
 import * as readline from "readline";
 
 // ── Selectors (mirrors zeusX/selectors.rs) ───────────────────────────────────
-const SEL = {
-  START_WORK:   "input[value='Mobiles Arbeiten'], button:has-text('Mobiles Arbeiten')",
-  END_WORK:     "input[value='Ende MA'], button:has-text('Ende MA')",
-  START_BREAK:  "input[value='Pause'], button:has-text('Pause')",
-  END_BREAK:    "input[value='Ende Pause'], button:has-text('Ende Pause')",
-  BOOKING_OK:   ".buchungsnachricht, .success, [class*='success']",
-  TERMINAL_URL: "https://zeusX.intersport.de/terminal",
-} as const;
+const BUTTONS: Record<string, { id: string; text: string }> = {
+  "in-out":               { id: "#TerminalButton0", text: "IN / OUT" },
+  "in":                   { id: "#TerminalButton1", text: "IN" },
+  "out":                  { id: "#TerminalButton2", text: "OUT" },
+  "pause":                { id: "#TerminalButton3", text: "Pause" },
+  "mobiles-arbeiten-start": { id: "#TerminalButton4", text: "Mobiles Arbeiten beg" },
+  "mobiles-arbeiten-end":   { id: "#TerminalButton5", text: "Mobiles Arbeiten end" },
+  "pause-mobil":            { id: "#TerminalButton6", text: "Pause mob. Arbeiten" },
+  "bereitschaft-start":   { id: "#TerminalButton7", text: "Bereitschaft START" },
+  "bereitschaft-stop":    { id: "#TerminalButton8", text: "Bereitschaft STOP" },
+  "dienstgang":           { id: "#TerminalButton9", text: "Dienstgang" },
+};
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-type Action = "start_work" | "end_work" | "start_break" | "end_break" | "ping";
+const TERMINAL_URL = "https://isg.intersport.de/terminal";
+const SEL_BOOKING_OK = ".buchungsnachricht, .success, [class*='erfolgreich']";
 
-interface Credentials {
-  username: string;
-  password: string;
-}
-
+interface Credentials { username: string; password: string; }
 interface Request {
-  id:          string;
-  action:      Action;
+  id: string;
+  action: string;
   credentials?: Credentials;
-  dry_run?:    boolean;
+  dry_run?: boolean;
 }
-
 interface Response {
-  id:     string;
-  ok:     boolean;
-  result?: string;
-  error?: string;
+  id: string; ok: boolean; result?: string; error?: string;
 }
 
-// ── State ─────────────────────────────────────────────────────────────────────
 let browser: Browser | null = null;
 let context: BrowserContext | null = null;
-let page:    Page | null    = null;
+let page: Page | null = null;
 
 async function ensureBrowser(): Promise<Page> {
   if (!browser) {
     browser = await chromium.launch({ headless: true });
     context = await browser.newContext();
-    page    = await context.newPage();
+    page = await context.newPage();
   }
   return page!;
 }
 
 async function ensureLoggedIn(p: Page, creds: Credentials): Promise<void> {
-  await p.goto(SEL.TERMINAL_URL, { waitUntil: "domcontentloaded" });
-
-  // If already on terminal, skip login
-  const onTerminal = await p.locator(SEL.START_WORK).count();
+  await p.goto(TERMINAL_URL, { waitUntil: "domcontentloaded" });
+  const onTerminal = await p.locator("#TerminalButton4").count();
   if (onTerminal > 0) return;
-
-  // Login form
-  await p.fill("input[name='username'], input[type='text']", creds.username);
-  await p.fill("input[name='password'], input[type='password']", creds.password);
-  await p.click("input[type='submit'], button[type='submit']");
+  await p.fill("#uiUserName_I", creds.username);
+  await p.fill("#uiPassword_I", creds.password);
+  await p.click("#uiNextButton");
   await p.waitForLoadState("domcontentloaded");
+  try {
+    await p.click("#uiLogOnButton", { timeout: 3000 });
+    await p.waitForLoadState("domcontentloaded");
+  } catch { /* already logged in */ }
 }
 
-async function clickAction(p: Page, selector: string): Promise<string> {
-  await p.waitForSelector(selector, { timeout: 10_000 });
-  await p.click(selector);
-  // Wait for booking confirmation
+async function clickButton(p: Page, key: string): Promise<string> {
+  const btn = BUTTONS[key];
+  if (!btn) throw new Error(`unknown action key: ${key}`);
+  // Try ID first, then text fallback
   try {
-    await p.waitForSelector(SEL.BOOKING_OK, { timeout: 8_000 });
-    const msg = await p.locator(SEL.BOOKING_OK).first().innerText();
-    return msg.trim();
+    await p.waitForSelector(btn.id, { timeout: 8000 });
+    await p.click(btn.id);
   } catch {
-    return "action clicked, no confirmation element found";
+    await p.click(`button:has-text("${btn.text}")`);
+  }
+  try {
+    await p.waitForSelector(SEL_BOOKING_OK, { timeout: 6000 });
+    return (await p.locator(SEL_BOOKING_OK).first().innerText()).trim();
+  } catch {
+    return `${key} clicked`;
   }
 }
 
 async function handleRequest(req: Request): Promise<Response> {
-  if (req.action === "ping") {
-    return { id: req.id, ok: true, result: "pong" };
-  }
+  if (req.action === "ping") return { id: req.id, ok: true, result: "pong" };
 
   if (req.dry_run) {
     return { id: req.id, ok: true, result: `[dry-run] would execute: ${req.action}` };
   }
 
-  if (!req.credentials) {
-    return { id: req.id, ok: false, error: "credentials required" };
-  }
+  if (!req.credentials) return { id: req.id, ok: false, error: "credentials required" };
 
   try {
     const p = await ensureBrowser();
     await ensureLoggedIn(p, req.credentials);
-
-    let selector: string;
-    switch (req.action) {
-      case "start_work":  selector = SEL.START_WORK;  break;
-      case "end_work":    selector = SEL.END_WORK;    break;
-      case "start_break": selector = SEL.START_BREAK; break;
-      case "end_break":   selector = SEL.END_BREAK;   break;
-      default:
-        return { id: req.id, ok: false, error: `unknown action: ${req.action}` };
-    }
-
-    const result = await clickAction(p, selector);
+    const result = await clickButton(p, req.action);
     return { id: req.id, ok: true, result };
   } catch (err) {
     return { id: req.id, ok: false, error: String(err) };
   }
 }
 
-// ── Main: stdin/stdout JSON protocol ─────────────────────────────────────────
 const rl = readline.createInterface({ input: process.stdin, terminal: false });
-
 rl.on("line", async (line) => {
   const trimmed = line.trim();
   if (!trimmed) return;
-
   let req: Request;
-  try {
-    req = JSON.parse(trimmed);
-  } catch {
-    const resp: Response = { id: "parse_error", ok: false, error: "invalid JSON" };
-    process.stdout.write(JSON.stringify(resp) + "\n");
-    return;
-  }
-
+  try { req = JSON.parse(trimmed); }
+  catch { process.stdout.write(JSON.stringify({ id: "parse_error", ok: false, error: "invalid JSON" }) + "\n"); return; }
   const resp = await handleRequest(req);
   process.stdout.write(JSON.stringify(resp) + "\n");
 });
-
-rl.on("close", async () => {
-  if (browser) await browser.close();
-  process.exit(0);
-});
-
-process.on("SIGTERM", async () => {
-  if (browser) await browser.close();
-  process.exit(0);
-});
+rl.on("close", async () => { if (browser) await browser.close(); process.exit(0); });
+process.on("SIGTERM", async () => { if (browser) await browser.close(); process.exit(0); });
