@@ -1,3 +1,10 @@
+## [1.9.16](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.15...v1.9.16) (2026-03-13)
+
+
+### Bug Fixes
+
+* **sidecar:** capture stderr for diagnostics, find node in /opt/homebrew+/usr/local on macOS, better error messages ([2b8dc58](https://github.com/beisel-it/hermesx-tauri/commit/2b8dc5897bd17e4fc33d8c4a89067f154313ced2))
+
 ## [1.9.15](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.14...v1.9.15) (2026-03-13)
 
 
