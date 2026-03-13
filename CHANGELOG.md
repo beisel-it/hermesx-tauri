@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/beisel-it/hermesx-tauri/compare/v1.1.0...v1.1.1) (2026-03-13)
+
+
+### Bug Fixes
+
+* **rust:** resolve clippy warnings (snake_case zeusX fields, Range::contains) ([735de1c](https://github.com/beisel-it/hermesx-tauri/commit/735de1c8eaca33f175d170a81b2abd3e8fa7cffd))
+
 # [1.1.0](https://github.com/beisel-it/hermesx-tauri/compare/v1.0.0...v1.1.0) (2026-03-13)
 
 
