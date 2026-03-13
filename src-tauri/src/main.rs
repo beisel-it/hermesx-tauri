@@ -1,13 +1,10 @@
-// HermesX (Tauri) — main entry point
-// Migration from: https://github.com/florianbeisel/hermesx (Electron v0.5.0)
-
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod persistence;
 mod zeusX;
 
 use hermesx_core::config::UserConfig;
-use hermesx_core::state_machine::{PersistedState, apply_transition, available_actions};
+use hermesx_core::state_machine::{apply_transition, available_actions};
 use zeusX::{action_from_key, dispatch};
 
 use std::sync::Mutex;
@@ -17,20 +14,16 @@ use tauri::{
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
 };
 
-// ── App State ──────────────────────────────────────────────────────────────
-
 struct AppState {
-    work_state: Mutex<PersistedState>,
+    work_state: Mutex<hermesx_core::state_machine::PersistedState>,
     config: Mutex<UserConfig>,
 }
 
-// ── Tray helpers ───────────────────────────────────────────────────────────
-
-fn build_tray_menu(app: &AppHandle, status_label: &str) -> tauri::Result<Menu<tauri::Wry>> {
-    let status = MenuItem::with_id(app, "status", status_label, false, None::<&str>)?;
+fn build_tray_menu(app: &AppHandle, label: &str) -> tauri::Result<Menu<tauri::Wry>> {
+    let status = MenuItem::with_id(app, "status", label, false, None::<&str>)?;
     let sep    = tauri::menu::PredefinedMenuItem::separator(app)?;
-    let show   = MenuItem::with_id(app, "show",   "Open HermesX", true, None::<&str>)?;
-    let quit   = MenuItem::with_id(app, "quit",   "Quit",          true, None::<&str>)?;
+    let show   = MenuItem::with_id(app, "show", "Open HermesX", true, None::<&str>)?;
+    let quit   = MenuItem::with_id(app, "quit", "Quit",         true, None::<&str>)?;
     Menu::with_items(app, &[&status, &sep, &show, &quit])
 }
 
@@ -44,8 +37,6 @@ fn update_tray(app: &AppHandle, emoji: &str, label: &str) {
         }
     }
 }
-
-// ── IPC Commands ───────────────────────────────────────────────────────────
 
 #[tauri::command]
 fn get_status(state: State<AppState>) -> serde_json::Value {
@@ -64,33 +55,45 @@ fn get_status(state: State<AppState>) -> serde_json::Value {
     })
 }
 
+// Fix: MutexGuard darf nicht über .await gehalten werden
+// Lösung: alle Daten aus dem Lock kopieren, dann Lock droppen, dann await
 #[tauri::command]
 async fn perform_action(
     action_label: String,
     app: AppHandle,
     state: State<'_, AppState>,
 ) -> Result<serde_json::Value, String> {
-    let cfg     = state.config.lock().unwrap().clone();
-    let dry_run = cfg.dry_run;
+    // --- Lock scope: alles was wir brauchen rauskopieren ---
+    let (action, dry_run, mut ws_snapshot) = {
+        let cfg = state.config.lock().unwrap();
+        let ws  = state.work_state.lock().unwrap();
+        let dry_run = cfg.dry_run;
 
-    let mut ws = state.work_state.lock().unwrap();
-    let valid  = available_actions(&ws.current_state);
-    let action = valid.into_iter()
-        .find(|a| a.label == action_label)
-        .ok_or_else(|| format!("Unknown action: {}", action_label))?;
+        let valid  = available_actions(&ws.current_state);
+        let action = valid.into_iter()
+            .find(|a| a.label == action_label)
+            .ok_or_else(|| format!("Unknown action: {}", action_label))?;
 
-    let result = apply_transition(&mut ws, &action, dry_run)?;
+        (action, dry_run, ws.clone())
+    }; // Lock wird hier gedroppt
 
-    // Persist state + update tray
-    persistence::save_state(&app, &ws);
-    update_tray(&app, ws.current_state.emoji(), ws.current_state.label());
+    // --- Transition auf geklontem State (kein Lock mehr) ---
+    let result = apply_transition(&mut ws_snapshot, &action, dry_run)?;
 
-    // ZeusX dispatch
+    // --- ZeusX dispatch (async, kein Lock gehalten) ---
     let zeus_result = if let Some(key) = &action.zeusX_action {
         if let Some(zeus_action) = action_from_key(key) {
             Some(dispatch(zeus_action, dry_run).await)
         } else { None }
     } else { None };
+
+    // --- State zurückschreiben ---
+    {
+        let mut ws = state.work_state.lock().unwrap();
+        *ws = ws_snapshot;
+        persistence::save_state(&app, &ws);
+        update_tray(&app, ws.current_state.emoji(), ws.current_state.label());
+    }
 
     Ok(serde_json::json!({
         "transition": result,
@@ -120,8 +123,6 @@ fn set_dry_run(enabled: bool, state: State<AppState>) -> serde_json::Value {
     serde_json::json!({ "dry_run": cfg.dry_run })
 }
 
-// ── App Setup ──────────────────────────────────────────────────────────────
-
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
@@ -132,10 +133,8 @@ fn main() {
         ))
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
-            // Load persisted state + config
             let work_state = persistence::load_state(app.handle());
             let config     = persistence::load_config(app.handle());
-
             let emoji = work_state.current_state.emoji().to_string();
             let label = work_state.current_state.label().to_string();
 
@@ -144,45 +143,27 @@ fn main() {
                 config:     Mutex::new(config),
             });
 
-            // Build systray (US-004, US-022)
             let menu = build_tray_menu(app.handle(), &format!("{} {}", emoji, label))?;
             TrayIconBuilder::with_id("main")
                 .menu(&menu)
                 .tooltip(format!("{} {}", emoji, label))
                 .title(&emoji)
                 .on_menu_event(|app, event| match event.id.as_ref() {
-                    "show" => {
-                        if let Some(win) = app.get_webview_window("main") {
-                            let _ = win.show();
-                            let _ = win.set_focus();
-                        }
-                    }
+                    "show" => { if let Some(w) = app.get_webview_window("main") { let _ = w.show(); let _ = w.set_focus(); } }
                     "quit" => app.exit(0),
                     _ => {}
                 })
                 .on_tray_icon_event(|tray, event| {
-                    if let TrayIconEvent::Click {
-                        button: MouseButton::Left,
-                        button_state: MouseButtonState::Up,
-                        ..
-                    } = event {
+                    if let TrayIconEvent::Click { button: MouseButton::Left, button_state: MouseButtonState::Up, .. } = event {
                         let app = tray.app_handle();
-                        if let Some(win) = app.get_webview_window("main") {
-                            let _ = win.show();
-                            let _ = win.set_focus();
-                        }
+                        if let Some(w) = app.get_webview_window("main") { let _ = w.show(); let _ = w.set_focus(); }
                     }
                 })
                 .build(app)?;
-
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            get_status,
-            perform_action,
-            get_config,
-            set_config,
-            set_dry_run,
+            get_status, perform_action, get_config, set_config, set_dry_run,
         ])
         .run(tauri::generate_context!())
         .expect("error while running HermesX");
