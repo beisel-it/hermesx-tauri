@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
-  import { getCurrentWindow } from '@tauri-apps/api/window';
   import { getStatus, performAction, performManualAction, type AppStatus, type ActionResult } from './lib/tauri';
   import Settings from './Settings.svelte';
 
@@ -70,7 +69,7 @@
   }
 
   async function close() {
-    await getCurrentWindow().hide();
+    await invoke('hide_window');
   }
 
   function formatTime(ms: number): string {

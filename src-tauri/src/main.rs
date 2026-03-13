@@ -12,6 +12,7 @@ use hermesx_core::state_machine::{apply_transition, available_actions};
 use zeusX::{action_from_key, dispatch};
 
 use std::sync::{Arc, Mutex};
+use tauri_plugin_positioner::{Position, WindowExt};
 use tauri::{Listener,
     AppHandle, Manager, State,
     menu::{Menu, MenuItem},
@@ -168,11 +169,20 @@ async fn perform_manual_action(
 }
 
 
+#[tauri::command]
+fn hide_window(app: AppHandle) {
+    if let Some(w) = app.get_webview_window("main") {
+        let _ = w.hide();
+    }
+}
+
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_store::Builder::default().build())
-        .plugin(tauri_plugin_autostart::init(
+        .plugin(tauri_plugin_positioner::init())
+            .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             Some(vec![]),
         ))
@@ -232,7 +242,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             get_status, perform_action, get_config, set_config, set_dry_run,
             save_credentials, load_credentials_status, delete_credentials,
-            perform_manual_action,
+            perform_manual_action, hide_window,
         ])
         .run(tauri::generate_context!())
         .expect("error while running HermesX");
