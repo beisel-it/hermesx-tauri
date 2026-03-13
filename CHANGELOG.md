@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/beisel-it/hermesx-tauri/compare/v1.3.0...v1.3.1) (2026-03-13)
+
+
+### Bug Fixes
+
+* **frontend:** vite.config.mts (ESM), svelte-plugin@4 for Svelte 5, dist builds clean ([345938b](https://github.com/beisel-it/hermesx-tauri/commit/345938bd24e897a8ed66aed56209a44b011b0924))
+
 # [1.3.0](https://github.com/beisel-it/hermesx-tauri/compare/v1.2.0...v1.3.0) (2026-03-13)
 
 
