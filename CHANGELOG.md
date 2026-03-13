@@ -1,3 +1,10 @@
+## [1.7.1](https://github.com/beisel-it/hermesx-tauri/compare/v1.7.0...v1.7.1) (2026-03-13)
+
+
+### Bug Fixes
+
+* **rust:** unused BufReader, SidecarResponse missing Serialize, keyring delete_password API ([74d93e3](https://github.com/beisel-it/hermesx-tauri/commit/74d93e3fc523401ee6eb9e754d2a628df9b59020))
+
 # [1.7.0](https://github.com/beisel-it/hermesx-tauri/compare/v1.6.1...v1.7.0) (2026-03-13)
 
 
