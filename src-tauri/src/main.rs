@@ -233,7 +233,12 @@ fn main() {
                     if let TrayIconEvent::Click { button: MouseButton::Left, button_state: MouseButtonState::Up, .. } = event {
                         let app = tray.app_handle();
                         if let Some(w) = app.get_webview_window("main") {
+                            // macOS: tray is top-right → position window below tray icon
+                            // Windows/Linux: tray is bottom-right → BottomRight uses work area (above taskbar)
+                            #[cfg(target_os = "macos")]
                             let _ = w.move_window(Position::TrayBottomCenter);
+                            #[cfg(not(target_os = "macos"))]
+                            let _ = w.move_window(Position::BottomRight);
                             let _ = w.show();
                             let _ = w.set_focus();
                         }
