@@ -7,6 +7,7 @@ edition = "2021"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+hermesx-core = { path = "../crates/hermesx-core" }
 tauri = { version = "2", features = ["tray-icon", "image-ico", "image-png"] }
 tauri-plugin-notification = "2"
 tauri-plugin-store = "2"
