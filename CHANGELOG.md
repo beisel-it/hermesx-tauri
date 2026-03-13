@@ -1,3 +1,10 @@
+## [1.9.5](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.4...v1.9.5) (2026-03-13)
+
+
+### Bug Fixes
+
+* **core:** zeusX_action key mismatch (start_work→mobiles-arbeiten-start); stub windows screen lock until florian-pc test ([b97d604](https://github.com/beisel-it/hermesx-tauri/commit/b97d604cea8a7e6b7ab8f3e709b99a1eb5134cbd))
+
 ## [1.9.4](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.3...v1.9.4) (2026-03-13)
 
 
