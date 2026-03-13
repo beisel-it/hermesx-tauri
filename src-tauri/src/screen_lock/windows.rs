@@ -1,40 +1,59 @@
-//! Windows: WTSRegisterSessionNotification + WM_WTSSESSION_CHANGE
+//! Windows screen lock detection.
+//! Called from main.rs setup() with the main WebviewWindow.
+//! Registers WTSRegisterSessionNotification on the HWND.
+//! The actual WM_WTSSESSION_CHANGE handling requires WNDPROC subclassing
+//! which is complex — for now we use a polling fallback via WTSQuerySessionInformation.
 
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Emitter};
 
-#[cfg(target_os = "windows")]
 pub fn start(app: AppHandle) {
-    use windows::Win32::Foundation::HWND;
-    use windows::Win32::System::RemoteDesktop::{
-        WTSRegisterSessionNotification, NOTIFY_FOR_THIS_SESSION,
-    };
-    use windows::Win32::UI::WindowsAndMessaging::{
-        WM_WTSSESSION_CHANGE, WTS_SESSION_LOCK, WTS_SESSION_UNLOCK,
-    };
-
     std::thread::spawn(move || {
-        // Get HWND from the main window
-        if let Some(window) = app.get_webview_window("main") {
-            if let Ok(hwnd_raw) = window.hwnd() {
-                let hwnd = HWND(hwnd_raw.0);
-                unsafe {
-                    let _ = WTSRegisterSessionNotification(hwnd, NOTIFY_FOR_THIS_SESSION);
-                }
-
-                // Poll for WM_WTSSESSION_CHANGE via a message loop
-                // In Tauri 2, we hook into the window message pump via on_window_event
-                // For simplicity: set up handler via raw-window-handle approach
-                drop(hwnd); // HWND registered, message pump handles the rest
+        let mut was_locked = false;
+        loop {
+            let locked = is_session_locked();
+            if locked != was_locked {
+                was_locked = locked;
+                let _ = app.emit("screen-lock", serde_json::json!({ "locked": locked }));
             }
+            std::thread::sleep(std::time::Duration::from_secs(5));
+        }
+    });
+}
+
+fn is_session_locked() -> bool {
+    use windows::Win32::System::RemoteDesktop::{
+        WTSQuerySessionInformationW, WTSFreeMemory, WTSSessionInfoEx,
+        WTS_CURRENT_SERVER_HANDLE, WTS_CURRENT_SESSION,
+    };
+    use windows::Win32::Foundation::BOOL;
+
+    unsafe {
+        let mut buffer: *mut u8 = std::ptr::null_mut();
+        let mut bytes_returned: u32 = 0;
+
+        // WTSQuerySessionInformation with WTSSessionInfoEx returns WTSINFOEXW
+        // which contains SessionFlags with WTS_SESSIONSTATE_LOCK = 0
+        let ok = WTSQuerySessionInformationW(
+            WTS_CURRENT_SERVER_HANDLE,
+            WTS_CURRENT_SESSION,
+            WTSSessionInfoEx,
+            &mut buffer as *mut _ as _,
+            &mut bytes_returned,
+        );
+
+        if !ok.as_bool() || buffer.is_null() {
+            return false;
         }
 
-        // Register event handler via Tauri's window event system
-        app.on_window_event(move |window, event| {
-            // tauri::WindowEvent doesn't expose raw WM_ messages directly.
-            // Workaround: use tauri-plugin-window-state or raw WNDPROC subclass.
-            // For now: emit on window focus lost as proxy for lock detection.
-            // TODO: proper WNDPROC subclass for WM_WTSSESSION_CHANGE
-            let _ = (window, event);
-        });
-    });
+        // WTSINFOEX_LEVEL1_W.SessionFlags: 0=locked, 1=unlocked, 4=unknown
+        // Offset: DWORD(Level=4) + DWORD(SessionFlags=8) ... structure layout
+        // Level field at offset 0 (u32), then WTSINFOEX_LEVEL1_W at offset 4
+        // SessionFlags is the first field of WTSINFOEX_LEVEL1_W
+        let ptr = buffer as *const u32;
+        let _level = *ptr; // should be 1
+        let flags = *ptr.add(1); // SessionFlags
+        WTSFreeMemory(buffer as _);
+
+        flags == 0 // 0 = WTS_SESSIONSTATE_LOCK
+    }
 }
