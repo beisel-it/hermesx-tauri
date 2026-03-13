@@ -12,6 +12,8 @@
     "autostart:default",
     "shell:allow-execute",
     "shell:allow-spawn",
-    "window:allow-hide"
+    "core:window:allow-hide",
+    "positioner:default",
+    "positioner:allow-move-window"
   ]
 }
