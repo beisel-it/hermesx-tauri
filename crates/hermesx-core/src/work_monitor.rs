@@ -117,7 +117,7 @@ pub fn evaluate(ctx: &MonitorContext) -> Vec<MonitorEvent> {
     if !ctx.is_working && !ctx.is_paused {
         let minutes_late = ((now - ctx.scheduled_start_ms) / 60_000) as u32;
         if now > ctx.scheduled_start_ms {
-            if minutes_late >= 15 && minutes_late < 30 && ctx.should_notify("morning-reminder") {
+            if (15..30).contains(&minutes_late) && ctx.should_notify("morning-reminder") {
                 events.push(MonitorEvent::MorningReminder { minutes_late });
             } else if minutes_late >= 30 && ctx.should_notify("late-start") {
                 events.push(MonitorEvent::LateStartEscalation { minutes_late });

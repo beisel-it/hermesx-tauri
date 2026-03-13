@@ -36,6 +36,7 @@ impl WorkState {
 /// Every available user action from a given state.
 /// `zeusX_action` maps to a key in zeusX::selectors — None = no ZeusX call needed.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(non_snake_case)]
 pub struct WorkAction {
     pub label: String,
     pub next_state: WorkState,
@@ -44,6 +45,7 @@ pub struct WorkAction {
 
 /// Result of a state transition attempt.
 #[derive(Debug, Serialize, Deserialize)]
+#[allow(non_snake_case)]
 pub struct TransitionResult {
     pub previous_state: WorkState,
     pub new_state: WorkState,
@@ -133,6 +135,7 @@ pub fn apply_transition(
     let previous = state.current_state.clone();
     let now = now_ms();
     let elapsed = state.start_time_ms.map(|t| now - t);
+    #[allow(non_snake_case)]
     let zeusX_triggered = action.zeusX_action.is_some();
 
     if !dry_run {
