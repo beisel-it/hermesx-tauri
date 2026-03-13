@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
-  import { getStatus, performAction, performManualAction, type AppStatus, type ActionResult } from './lib/tauri';
+  import { getStatus, performAction, performManualAction, type AppStatus } from './lib/tauri';
   import Settings from './Settings.svelte';
 
   let status    = $state<AppStatus | null>(null);
-  let config    = $state<Record<string, any> | null>(null);
+  let config    = $state<Record<string, unknown> | null>(null);
   let showSettings = $state(false);
   let error     = $state<string | null>(null);
   let toast     = $state<string | null>(null);
