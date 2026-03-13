@@ -1,3 +1,10 @@
+## [1.9.2](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.1...v1.9.2) (2026-03-13)
+
+
+### Bug Fixes
+
+* **windows:** WTSQuerySessionInformationW returns Result<()> not BOOL, fix .ok()? and pointer offset ([6a4befd](https://github.com/beisel-it/hermesx-tauri/commit/6a4befd90c03ae781238e37598adc87e10638594))
+
 ## [1.9.1](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.0...v1.9.1) (2026-03-13)
 
 
