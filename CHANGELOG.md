@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/beisel-it/hermesx-tauri/compare/v1.1.1...v1.2.0) (2026-03-13)
+
+
+### Features
+
+* **rust:** add persistence (US-005) + systray setup (US-004/022) + autostart wiring ([166d383](https://github.com/beisel-it/hermesx-tauri/commit/166d383bd91a103eaa4e5d3a068d238347adf4e1))
+
 ## [1.1.1](https://github.com/beisel-it/hermesx-tauri/compare/v1.1.0...v1.1.1) (2026-03-13)
 
 
