@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/beisel-it/hermesx-tauri/compare/v1.4.0...v1.5.0) (2026-03-13)
+
+
+### Features
+
+* **sidecar:** ZeusX Node.js/Playwright sidecar with JSON stdio protocol, dry-run, ping/pong (US-001/002/003) ([4b6834a](https://github.com/beisel-it/hermesx-tauri/commit/4b6834a2e909c7cb9a3e263f2fbffb530079b705))
+
 # [1.4.0](https://github.com/beisel-it/hermesx-tauri/compare/v1.3.3...v1.4.0) (2026-03-13)
 
 
