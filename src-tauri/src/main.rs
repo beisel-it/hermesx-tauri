@@ -4,6 +4,7 @@ mod credentials;
 mod persistence;
 mod monitor;
 mod screen_lock;
+#[allow(non_snake_case)]
 mod zeusX;
 
 use hermesx_core::config::UserConfig;

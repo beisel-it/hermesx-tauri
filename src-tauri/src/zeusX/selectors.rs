@@ -1,3 +1,7 @@
+#![allow(dead_code)]
+//! INTERSPORT ZeusX terminal selectors — used by the Node.js sidecar (src-sidecar/src/index.ts)
+//! Kept here as canonical reference / documentation for the Rust side.
+
 // zeusX/selectors.rs — Single source of truth for all ZeusX DOM selectors
 // Source: zeus-punch/src/selectors.ts (2026-03-13)
 //
