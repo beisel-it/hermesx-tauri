@@ -33,7 +33,6 @@ strip = true
 windows = { version = "0.58", features = [
     "Win32_System_RemoteDesktop",
     "Win32_Foundation",
-    "Win32_Core",
 ]}
 
 # macOS: libloading (cross-platform dep above) handles CGSession polling

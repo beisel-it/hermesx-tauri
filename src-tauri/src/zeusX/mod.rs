@@ -15,16 +15,23 @@ use uuid::Uuid;
 /// One ZeusX action the sidecar can execute.
 #[derive(Debug, Clone)]
 pub struct ZeusAction {
-    pub key: &'static str,
+    pub key: String,
 }
 
 /// A Tauri WorkAction may reference a ZeusX action by key.
 pub fn action_from_key(key: &str) -> Option<ZeusAction> {
+    // Keys must match selectors.rs TERMINAL_BUTTONS keys
     match key {
-        "start_work"  => Some(ZeusAction { key: "start_work"  }),
-        "end_work"    => Some(ZeusAction { key: "end_work"    }),
-        "start_break" => Some(ZeusAction { key: "start_break" }),
-        "end_break"   => Some(ZeusAction { key: "end_break"   }),
+        "mobiles-arbeiten-start" |
+        "mobiles-arbeiten-end"   |
+        "pause-mobil"            |
+        "in"                     |
+        "out"                    |
+        "pause"                  |
+        "in-out"                 |
+        "bereitschaft-start"     |
+        "bereitschaft-stop"      |
+        "dienstgang"             => Some(ZeusAction { key: Box::leak(key.to_string().into_boxed_str()) }),
         _ => None,
     }
 }
@@ -81,7 +88,7 @@ pub async fn dispatch(action: ZeusAction, dry_run: bool) -> Result<SidecarRespon
 
     let req = SidecarRequest {
         id:          Uuid::new_v4().to_string(),
-        action:      action.key,
+        action:      &action.key,
         dry_run,
         credentials: creds,
     };
