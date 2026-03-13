@@ -1,6 +1,6 @@
 {
   "productName": "HermesX",
-  "version": "1.9.19",
+  "version": "1.9.20",
   "identifier": "de.datenba.hermesx",
   "build": {
     "frontendDist": "../dist",

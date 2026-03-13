@@ -1,3 +1,10 @@
+## [1.9.20](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.19...v1.9.20) (2026-03-13)
+
+
+### Bug Fixes
+
+* **tray:** BottomRight (work area) on Windows/Linux, TrayBottomCenter on macOS — fixes window below taskbar ([7183dc2](https://github.com/beisel-it/hermesx-tauri/commit/7183dc227fe63800ad128946da171978ac0a791e))
+
 ## [1.9.19](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.18...v1.9.19) (2026-03-13)
 
 
