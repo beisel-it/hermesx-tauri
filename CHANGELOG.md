@@ -1,3 +1,10 @@
+## [1.9.8](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.7...v1.9.8) (2026-03-13)
+
+
+### Bug Fixes
+
+* **tray:** close button via hide_window IPC, tray click positions window at TrayBottomCenter via plugin-positioner ([635195e](https://github.com/beisel-it/hermesx-tauri/commit/635195e39e495dfe75f5f09d51ef42d6a67ff23d))
+
 ## [1.9.7](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.6...v1.9.7) (2026-03-13)
 
 
