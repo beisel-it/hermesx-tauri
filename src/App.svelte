@@ -1,10 +1,12 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { getCurrentWindow } from '@tauri-apps/api/window';
+  import { invoke } from '@tauri-apps/api/core';
   import { getStatus, performAction, type AppStatus } from './lib/tauri';
   import Settings from './Settings.svelte';
 
   let status = $state<AppStatus | null>(null);
+  let config = $state<Record<string, any> | null>(null);
   let showSettings = $state(false);
   let error = $state<string | null>(null);
   let workedTime = $state('00:00:00');
@@ -12,7 +14,10 @@
 
   async function refresh() {
     try {
-      status = await getStatus();
+      [status, config] = await Promise.all([
+        getStatus(),
+        invoke<Record<string, any>>('get_config'),
+      ]);
       error = null;
     } catch (e) {
       error = String(e);
@@ -89,10 +94,9 @@
     {#if showSettings}
       <!-- Settings View -->
       <Settings
-        config={status}
+        config={config}
         onSave={async (cfg) => {
           try {
-            const { invoke } = await import('@tauri-apps/api/core');
             await invoke('set_config', { config: cfg });
             showSettings = false;
             await refresh();
