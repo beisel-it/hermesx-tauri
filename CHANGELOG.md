@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/beisel-it/hermesx-tauri/compare/v1.3.3...v1.4.0) (2026-03-13)
+
+
+### Features
+
+* **monitor:** WorkMonitor timer loop — 60s tick, OS notifications, NotificationManager cooldown (US-006–012) ([495c9e1](https://github.com/beisel-it/hermesx-tauri/commit/495c9e1304d42cca6ed5c8182a87baba4eb0bd2f))
+
 ## [1.3.3](https://github.com/beisel-it/hermesx-tauri/compare/v1.3.2...v1.3.3) (2026-03-13)
 
 
