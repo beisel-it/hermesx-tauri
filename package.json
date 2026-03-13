@@ -1,6 +1,6 @@
 {
   "name": "hermesx-tauri",
-  "version": "1.9.8",
+  "version": "1.9.9",
   "scripts": {
     "dev": "vite",
     "build": "npm run build:sidecar && vite build",

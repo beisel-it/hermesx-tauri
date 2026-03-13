@@ -1,3 +1,10 @@
+## [1.9.9](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.8...v1.9.9) (2026-03-13)
+
+
+### Bug Fixes
+
+* **ci:** remove invalid positioner:default capability (plugin uses WindowExt directly, no permission key needed) ([b1807ed](https://github.com/beisel-it/hermesx-tauri/commit/b1807ed4656dc5afab9a25ce8d5e0b3c7995791e))
+
 ## [1.9.8](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.7...v1.9.8) (2026-03-13)
 
 
