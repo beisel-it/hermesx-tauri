@@ -1,1 +1,25 @@
-node_modules/\ntarget/\ndist/\n.env\n*.log
+# Rust
+target/
+Cargo.lock
+
+# Node
+node_modules/
+dist/
+.svelte-kit/
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.local
