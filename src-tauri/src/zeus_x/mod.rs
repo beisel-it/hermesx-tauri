@@ -60,6 +60,21 @@ pub struct SidecarResponse {
 /// Find the sidecar binary.
 /// In dev: look for node + dist/index.js relative to cargo workspace.
 /// In production: Tauri bundles the sidecar via tauri.conf.json externalBin.
+fn find_node() -> String {
+    // macOS apps often have a stripped PATH; check common node locations
+    let candidates = [
+        "/opt/homebrew/bin/node",   // Apple Silicon homebrew
+        "/usr/local/bin/node",      // Intel homebrew / nvm default
+        "/usr/bin/node",
+    ];
+    for c in &candidates {
+        if std::path::Path::new(c).exists() {
+            return c.to_string();
+        }
+    }
+    "node".to_string() // fall back to PATH
+}
+
 fn sidecar_cmd() -> Command {
     // Dev: CARGO_MANIFEST_DIR = src-tauri/, parent = workspace root
     // Production: zeus-sidecar.js bundled alongside binary
@@ -71,14 +86,13 @@ fn sidecar_cmd() -> Command {
     let script = if dev_path.exists() {
         dev_path
     } else {
-        // Production: next to the binary
         std::env::current_exe()
             .ok()
             .and_then(|p| p.parent().map(|d| d.join("zeus-sidecar.js")))
             .unwrap_or(dev_path)
     };
 
-    let mut cmd = Command::new("node");
+    let mut cmd = Command::new(find_node());
     cmd.arg(script);
     cmd
 }
@@ -101,17 +115,26 @@ pub async fn dispatch(action: ZeusAction, dry_run: bool, creds: Option<crate::cr
     let mut child = sidecar_cmd()
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
-        .stderr(Stdio::null())
+        .stderr(Stdio::piped())   // capture stderr for diagnostics
         .spawn()
-        .map_err(|e| format!("Failed to spawn zeus-sidecar: {e}"))?;
+        .map_err(|e| format!("Failed to spawn zeus-sidecar (is node in PATH?): {e}"))?;
 
     {
         let stdin = child.stdin.as_mut().ok_or("no stdin")?;
         stdin.write_all(format!("{json}\n").as_bytes())
             .map_err(|e| e.to_string())?;
-    } // stdin closed → sidecar reads EOF, processes, exits
+    }
 
     let output = child.wait_with_output().map_err(|e| e.to_string())?;
+
+    if !output.status.success() || output.stdout.is_empty() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!(
+            "sidecar error (exit={:?}): {}",
+            output.status.code(),
+            if stderr.is_empty() { "no output" } else { stderr.trim() }
+        ));
+    }
 
     let line = output.stdout
         .lines()

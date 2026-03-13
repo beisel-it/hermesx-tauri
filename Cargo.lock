@@ -1712,7 +1712,7 @@ dependencies = [
 
 [[package]]
 name = "hermesx-tauri"
-version = "1.9.12"
+version = "1.9.14"
 dependencies = [
  "chrono",
  "futures",
