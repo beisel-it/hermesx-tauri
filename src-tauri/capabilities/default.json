@@ -1,0 +1,14 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/schema/capability.json",
+  "identifier": "default",
+  "description": "Default capabilities for HermesX",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "notification:default",
+    "store:default",
+    "autostart:default",
+    "shell:allow-execute",
+    "shell:allow-spawn"
+  ]
+}

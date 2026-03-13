@@ -25,10 +25,7 @@
       "webviewInstallMode": {
         "type": "downloadBootstrapper"
       }
-    },
-    "externalBin": [
-      "../src-sidecar/dist/index"
-    ]
+    }
   },
   "app": {
     "windows": [
