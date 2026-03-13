@@ -26,9 +26,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: yarn
 
-      - run: yarn install --frozen-lockfile || true
+      - run: yarn install --no-frozen-lockfile || true
 
       - name: Semantic Release
         id: release
@@ -68,7 +67,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: yarn
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -84,7 +82,7 @@ jobs:
             libwebkit2gtk-4.1-dev libappindicator3-dev \
             librsvg2-dev patchelf lld
 
-      - run: yarn install --frozen-lockfile || true
+      - run: yarn install --no-frozen-lockfile || true
       - run: yarn build || true  # frontend build — ok to skip until src/ exists
 
       - name: Build Tauri app
