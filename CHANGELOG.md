@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/beisel-it/hermesx-tauri/compare/v1.8.1...v1.9.0) (2026-03-13)
+
+
+### Features
+
+* **ui:** dry-run toast feedback, manual booking buttons (behind manual_mode setting), perform_manual_action IPC ([50922bb](https://github.com/beisel-it/hermesx-tauri/commit/50922bb7a7d9eeefa030502ca548698178cfbcac))
+
 ## [1.8.1](https://github.com/beisel-it/hermesx-tauri/compare/v1.8.0...v1.8.1) (2026-03-13)
 
 
