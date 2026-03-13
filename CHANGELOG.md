@@ -1,3 +1,10 @@
+## [1.9.7](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.6...v1.9.7) (2026-03-13)
+
+
+### Bug Fixes
+
+* **credentials:** load once at startup into AppState cache, never prompt keychain per-action again ([8d863c6](https://github.com/beisel-it/hermesx-tauri/commit/8d863c66e8e7a48dd9f4e0501f1ed219f02a2ab8))
+
 ## [1.9.6](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.5...v1.9.6) (2026-03-13)
 
 
