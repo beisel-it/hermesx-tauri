@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/beisel-it/hermesx-tauri/compare/v1.2.0...v1.3.0) (2026-03-13)
+
+
+### Features
+
+* proper tauri.conf.json (window config, tray, bundle) + CI streamline ([e6fa94b](https://github.com/beisel-it/hermesx-tauri/commit/e6fa94ba503785bf15a3a94a0e57185337d3b5f5))
+
 # [1.2.0](https://github.com/beisel-it/hermesx-tauri/compare/v1.1.1...v1.2.0) (2026-03-13)
 
 
