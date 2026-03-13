@@ -1,3 +1,10 @@
+## [1.9.12](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.11...v1.9.12) (2026-03-13)
+
+
+### Bug Fixes
+
+* **tray:** register positioner on_tray_event hook to fix TrayBottomCenter panic; suppress dead_code in selectors.rs ([12d1e1e](https://github.com/beisel-it/hermesx-tauri/commit/12d1e1eb5928ed9d4f8a6828e8d4dc8ab9291999))
+
 ## [1.9.11](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.10...v1.9.11) (2026-03-13)
 
 
