@@ -1,3 +1,10 @@
+## [1.9.13](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.12...v1.9.13) (2026-03-13)
+
+
+### Bug Fixes
+
+* **tray:** on_tray_event in click handler for positioner, remove TrayBottomCenter from menu item (no tray context there) ([a7e52cc](https://github.com/beisel-it/hermesx-tauri/commit/a7e52ccb9332ac288694fadbc3c97e78c9390458))
+
 ## [1.9.12](https://github.com/beisel-it/hermesx-tauri/compare/v1.9.11...v1.9.12) (2026-03-13)
 
 
