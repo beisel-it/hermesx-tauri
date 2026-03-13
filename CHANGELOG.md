@@ -1,3 +1,10 @@
+## [1.7.2](https://github.com/beisel-it/hermesx-tauri/compare/v1.7.1...v1.7.2) (2026-03-13)
+
+
+### Bug Fixes
+
+* **macos:** replace objc2 block API with CGSession polling (no FFI blocks), fix app.handle().listen() ([16a7674](https://github.com/beisel-it/hermesx-tauri/commit/16a76744790a1f9d5c6ae1f61aef33de6773d733))
+
 ## [1.7.1](https://github.com/beisel-it/hermesx-tauri/compare/v1.7.0...v1.7.1) (2026-03-13)
 
 
